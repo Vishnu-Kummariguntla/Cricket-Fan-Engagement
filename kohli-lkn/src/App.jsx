@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { cricketerProfiles, quizQuestions } from './cricketerProfiles'
 
 const players = {
   kohli: {
@@ -316,10 +317,191 @@ function ComparisonView() {
   )
 }
 
+function scoreProfiles(answers) {
+  const userTraits = {
+    calm: 50,
+    ambition: 50,
+    risk: 50,
+    creativity: 50,
+    resilience: 50,
+    leadership: 50,
+    flair: 50,
+    teamwork: 50,
+  }
+
+  answers.forEach((optionIndex, questionIndex) => {
+    if (optionIndex === undefined) {
+      return
+    }
+
+    const option = quizQuestions[questionIndex].options[optionIndex]
+    Object.entries(option.scores).forEach(([trait, value]) => {
+      userTraits[trait] = Math.max(0, Math.min(100, userTraits[trait] + value))
+    })
+  })
+
+  return cricketerProfiles
+    .map((profile) => {
+      const distance = Object.entries(userTraits).reduce((total, [trait, value]) => {
+        return total + Math.abs(value - profile.traits[trait])
+      }, 0)
+      const match = Math.max(1, Math.round(100 - distance / 8))
+
+      return { ...profile, match }
+    })
+    .sort((a, b) => b.match - a.match)
+}
+
+function FanPersonalityTest() {
+  const [answers, setAnswers] = useState({})
+  const [showResult, setShowResult] = useState(false)
+  const answeredCount = Object.keys(answers).length
+  const results = useMemo(() => scoreProfiles(answers), [answers])
+  const winner = results[0]
+  const runnersUp = results.slice(1, 4)
+
+  return (
+    <section className="fan-stage" aria-label="Cricketer personality test">
+      <div className="fan-hero">
+        <div>
+          <span>Fan Match Lab</span>
+          <h1>Which cricketer are you?</h1>
+          <p>
+            Answer eight life-based questions and get matched against 50 cricketer profiles built from career roles,
+            leadership patterns, playing styles, and Wikipedia-backed summaries.
+          </p>
+        </div>
+        <div className="fan-scoreboard" aria-label="Quiz progress">
+          <strong>{answeredCount}</strong>
+          <span>/ {quizQuestions.length}</span>
+          <small>Answered</small>
+        </div>
+      </div>
+
+      <div className="quiz-layout">
+        <div className="question-stack">
+          {quizQuestions.map((question, questionIndex) => (
+            <article className="quiz-question" key={question.prompt}>
+              <div className="question-title">
+                <span>{String(questionIndex + 1).padStart(2, '0')}</span>
+                <h2>{question.prompt}</h2>
+              </div>
+              <div className="answer-grid">
+                {question.options.map((option, optionIndex) => (
+                  <button
+                    className={answers[questionIndex] === optionIndex ? 'selected' : ''}
+                    key={option.label}
+                    onClick={() => {
+                      setAnswers((current) => ({ ...current, [questionIndex]: optionIndex }))
+                      setShowResult(false)
+                    }}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <aside className="result-panel">
+          <div className="result-card">
+            <span>Current Match</span>
+            <strong>{winner.name}</strong>
+            <small>
+              {winner.country} • {winner.role}
+            </small>
+            <div className="match-ring" style={{ '--match': `${winner.match * 3.6}deg` }}>
+              <b>{winner.match}%</b>
+            </div>
+            <h2>{winner.archetype}</h2>
+            <p>{winner.matchLine}</p>
+
+            {showResult && (
+              <div className="evidence-list">
+                {winner.evidence.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            )}
+
+            <div className="result-actions">
+              <button
+                disabled={answeredCount < quizQuestions.length}
+                onClick={() => setShowResult(true)}
+                type="button"
+              >
+                Reveal Profile
+              </button>
+              <button
+                onClick={() => {
+                  setAnswers({})
+                  setShowResult(false)
+                }}
+                type="button"
+              >
+                Reset
+              </button>
+            </div>
+
+            <a href={winner.wikipedia} rel="noreferrer" target="_blank">
+              Wikipedia profile
+            </a>
+          </div>
+
+          <div className="runner-panel">
+            <h2>Also Close</h2>
+            {runnersUp.map((player) => (
+              <div className="runner-row" key={player.name}>
+                <span>{player.match}%</span>
+                <div>
+                  <strong>{player.name}</strong>
+                  <small>{player.archetype}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+
+      <div className="player-cloud" aria-label="Available cricketer match pool">
+        {cricketerProfiles.map((profile) => (
+          <a href={profile.wikipedia} key={profile.name} rel="noreferrer" target="_blank">
+            {profile.name}
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function App() {
-  const [activeView, setActiveView] = useState('kohli')
+  const getInitialView = () => {
+    if (window.location.pathname === '/fan-test') {
+      return 'fan'
+    }
+
+    return 'kohli'
+  }
+  const [activeView, setActiveView] = useState(getInitialView)
   const [frame, setFrame] = usePlayback()
   const player = players[activeView]
+  const changeView = (view) => {
+    const path = view === 'fan' ? '/fan-test' : '/'
+    window.history.pushState({}, '', path)
+    setActiveView(view)
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveView(window.location.pathname === '/fan-test' ? 'fan' : 'kohli')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   return (
     <main className="app-shell">
@@ -329,7 +511,7 @@ function App() {
             className={key === activeView ? 'active' : ''}
             key={key}
             onClick={() => {
-              setActiveView(key)
+              changeView(key)
               setFrame(1)
             }}
             type="button"
@@ -340,15 +522,29 @@ function App() {
         ))}
         <button
           className={activeView === 'comparison' ? 'active' : ''}
-          onClick={() => setActiveView('comparison')}
+          onClick={() => changeView('comparison')}
           type="button"
         >
           <span>VS</span>
           Similarities
         </button>
+        <button
+          className={activeView === 'fan' ? 'active' : ''}
+          onClick={() => changeView('fan')}
+          type="button"
+        >
+          <span>50</span>
+          Fan Test
+        </button>
       </nav>
 
-      {activeView === 'comparison' ? <ComparisonView /> : <KnowledgeNetwork player={player} frame={frame} />}
+      {activeView === 'comparison' ? (
+        <ComparisonView />
+      ) : activeView === 'fan' ? (
+        <FanPersonalityTest />
+      ) : (
+        <KnowledgeNetwork player={player} frame={frame} />
+      )}
     </main>
   )
 }
