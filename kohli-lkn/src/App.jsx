@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Component, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { cricketerProfiles, quizQuestions } from './cricketerProfiles'
 
@@ -119,6 +119,32 @@ const comparison = {
     'Kohli’s media image is continuous and global; Pandey’s is event-driven and often tied to IPL or domestic cricket.',
     'Both are respected batters, but the scale of public expectation around Kohli is much larger.',
   ],
+}
+
+class AppErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main className="app-shell">
+          <section className="app-error">
+            <strong>Something failed while loading this page.</strong>
+            <p>{this.state.error.message}</p>
+          </section>
+        </main>
+      )
+    }
+
+    return this.props.children
+  }
 }
 
 function usePlayback() {
@@ -329,12 +355,12 @@ function scoreProfiles(answers) {
     teamwork: 50,
   }
 
-  answers.forEach((optionIndex, questionIndex) => {
+  Object.entries(answers).forEach(([questionIndex, optionIndex]) => {
     if (optionIndex === undefined) {
       return
     }
 
-    const option = quizQuestions[questionIndex].options[optionIndex]
+    const option = quizQuestions[Number(questionIndex)].options[optionIndex]
     Object.entries(option.scores).forEach(([trait, value]) => {
       userTraits[trait] = Math.max(0, Math.min(100, userTraits[trait] + value))
     })
@@ -478,7 +504,7 @@ function FanPersonalityTest() {
 
 function App() {
   const getInitialView = () => {
-    if (window.location.pathname === '/fan-test') {
+    if (typeof window !== 'undefined' && window.location.pathname === '/fan-test') {
       return 'fan'
     }
 
@@ -486,10 +512,12 @@ function App() {
   }
   const [activeView, setActiveView] = useState(getInitialView)
   const [frame, setFrame] = usePlayback()
-  const player = players[activeView]
+  const player = players[activeView] ?? players.kohli
   const changeView = (view) => {
     const path = view === 'fan' ? '/fan-test' : '/'
-    window.history.pushState({}, '', path)
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', path)
+    }
     setActiveView(view)
   }
 
@@ -550,3 +578,11 @@ function App() {
 }
 
 export default App
+
+export function RootApp() {
+  return (
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
+  )
+}
