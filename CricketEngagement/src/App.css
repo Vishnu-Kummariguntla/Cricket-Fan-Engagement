@@ -76,6 +76,660 @@
   background: #050812;
 }
 
+.timeline-page {
+  min-height: 150svh;
+  padding-top: 0;
+  color: #f8fbff;
+  background: #050812;
+}
+
+.dynasty-page {
+  min-height: 100svh;
+  padding: 94px 24px 86px;
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(247, 201, 72, 0.16), transparent 28%),
+    radial-gradient(circle at 78% 28%, rgba(34, 211, 238, 0.12), transparent 24%),
+    linear-gradient(180deg, #050812, #071018 48%, #050812);
+}
+
+.dynasty-hero {
+  max-width: 1120px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.dynasty-hero span,
+.dynasty-toolbar span,
+.dynasty-score-card span,
+.lineup-heading span,
+.impact-zone span,
+.dynasty-results-header span,
+.dynasty-result-grid span,
+.chemistry-panel > span,
+.comparison-panel span,
+.dynasty-share-card > span {
+  color: #f7c948;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dynasty-hero h1 {
+  max-width: 880px;
+  margin: 10px auto 0;
+  color: #fff;
+  font-size: 58px;
+  line-height: 0.98;
+}
+
+.dynasty-hero p {
+  max-width: 760px;
+  margin: 16px auto 0;
+  color: #c3cdea;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.dynasty-layout {
+  max-width: 1320px;
+  display: grid;
+  grid-template-columns: minmax(330px, 0.36fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin: 0 auto;
+}
+
+.dynasty-board,
+.dynasty-player-market,
+.dynasty-results,
+.dynasty-score-card,
+.dynasty-validation,
+.lineup-board,
+.dynasty-toolbar,
+.dynasty-player-card,
+.dynasty-results-header,
+.chemistry-panel,
+.comparison-panel,
+.dynasty-share-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(14px);
+}
+
+.dynasty-board {
+  position: sticky;
+  top: 84px;
+  align-self: start;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.dynasty-score-card {
+  padding: 8px 10px;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(247, 201, 72, 0.18), transparent 32%),
+    rgba(255, 255, 255, 0.06);
+}
+
+.dynasty-score-card strong {
+  display: block;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.dynasty-score-card small {
+  color: #dbe5ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.dynasty-validation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dynasty-validation div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  background: rgba(5, 8, 18, 0.72);
+}
+
+.dynasty-validation span,
+.dynasty-messages span,
+.lineup-slots small,
+.dynasty-card-copy small,
+.dynasty-player-card dt,
+.dynasty-player-card dd,
+.dynasty-result-grid p,
+.chemistry-panel p,
+.dynasty-share-card small {
+  color: #aeb8d3;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dynasty-validation strong {
+  color: #fff;
+  font-size: 15px;
+}
+
+.dynasty-validation span {
+  font-size: 10px;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.dynasty-messages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dynasty-messages span,
+.dynasty-messages strong {
+  flex: 1 1 120px;
+  padding: 6px 7px;
+  border-left: 3px solid #f7c948;
+  border-radius: 6px;
+  background: rgba(247, 201, 72, 0.08);
+  font-size: 11px;
+  line-height: 1.18;
+}
+
+.dynasty-messages strong {
+  color: #dcfce7;
+  border-left-color: #22c55e;
+}
+
+.lineup-board {
+  padding: 10px;
+}
+
+.lineup-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+
+.lineup-heading small {
+  color: #dbe5ff;
+  font-weight: 950;
+}
+
+.lineup-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.lineup-slots button,
+.impact-zone {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  padding: 5px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.035);
+  font: inherit;
+  text-align: left;
+}
+
+.lineup-slots button.filled {
+  border-style: solid;
+  border-color: rgba(247, 201, 72, 0.24);
+  cursor: pointer;
+}
+
+.lineup-slots button.assignable,
+.impact-zone.assignable {
+  border-color: rgba(34, 211, 238, 0.58);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.18);
+  cursor: pointer;
+  animation: slot-pulse 1.2s ease-in-out infinite;
+}
+
+.lineup-slots button.selected-slot {
+  border-color: rgba(247, 201, 72, 0.72);
+}
+
+.lineup-slots span {
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #071018;
+  background: #f7c948;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.lineup-slots strong,
+.impact-zone strong {
+  display: block;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+.lineup-slots small,
+.impact-zone small {
+  display: block;
+  margin-top: 2px;
+  font-size: 8px;
+  line-height: 1.1;
+}
+
+.lineup-slots em,
+.impact-zone em {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  float: left;
+  margin-right: 8px;
+  border-radius: 50%;
+  color: #071018;
+  background: linear-gradient(135deg, #f7c948, #22d3ee);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  box-shadow: 0 0 18px rgba(247, 201, 72, 0.18);
+}
+
+.impact-zone {
+  grid-template-columns: 1fr;
+  margin-top: 7px;
+  border-color: rgba(34, 211, 238, 0.34);
+  background: rgba(34, 211, 238, 0.07);
+}
+
+.impact-zone.filled {
+  border-style: solid;
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.12);
+}
+
+.dynasty-player-market {
+  padding: 14px;
+}
+
+.dynasty-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.dynasty-toolbar strong {
+  display: block;
+  color: #fff;
+  font-size: 20px;
+}
+
+.dynasty-toolbar input {
+  width: min(360px, 100%);
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(5, 8, 18, 0.78);
+  padding: 0 12px;
+  font: inherit;
+}
+
+.dynasty-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dynasty-tabs,
+.quick-builds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dynasty-tabs button,
+.quick-builds button,
+.dynasty-controls select {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #dbe5ff;
+  background: rgba(255, 255, 255, 0.065);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dynasty-tabs button {
+  padding: 0 12px;
+}
+
+.dynasty-tabs button.active {
+  color: #071018;
+  background: #f7c948;
+}
+
+.dynasty-controls label {
+  display: grid;
+  gap: 5px;
+  color: #aeb8d3;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dynasty-controls select {
+  min-width: 170px;
+  padding: 0 10px;
+}
+
+.quick-builds {
+  margin-bottom: 10px;
+}
+
+.quick-builds button {
+  padding: 0 10px;
+  color: #071018;
+  background: color-mix(in srgb, #f7c948 82%, #fff);
+}
+
+.assignment-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid rgba(34, 211, 238, 0.24);
+  border-radius: 8px;
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.assignment-hint strong {
+  color: #fff;
+}
+
+.assignment-hint span {
+  color: #c3cdea;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dynasty-player-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dynasty-player-card {
+  position: relative;
+  overflow: hidden;
+  padding: 12px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--player-accent) 28%, transparent), transparent 30%),
+    rgba(255, 255, 255, 0.05);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.dynasty-player-card:hover,
+.dynasty-player-card.selected,
+.dynasty-player-card.pending {
+  border-color: color-mix(in srgb, var(--player-accent) 70%, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--player-accent) 22%, transparent);
+  transform: translateY(-4px);
+}
+
+.dynasty-player-card.pending {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-accent) 72%, #fff), 0 18px 48px color-mix(in srgb, var(--player-accent) 32%, transparent);
+}
+
+.dynasty-player-image {
+  min-height: 88px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--player-accent) 54%, #050812), rgba(255, 255, 255, 0.08)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 14px);
+}
+
+.dynasty-player-image span {
+  color: #fff;
+  font-size: 34px;
+  font-weight: 950;
+}
+
+.dynasty-card-copy span {
+  color: color-mix(in srgb, var(--player-accent) 82%, #fff);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dynasty-card-copy strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.dynasty-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dynasty-card-badges span {
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #071018;
+  background: color-mix(in srgb, var(--player-accent) 82%, #fff);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.dynasty-player-card dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.dynasty-player-card dt,
+.dynasty-player-card dd {
+  margin: 0;
+}
+
+.dynasty-player-card dd {
+  color: #fff;
+  font-weight: 950;
+}
+
+.dynasty-results {
+  max-width: 1320px;
+  display: grid;
+  gap: 12px;
+  margin: 16px auto 0;
+  padding: 16px;
+}
+
+.dynasty-results-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+}
+
+.dynasty-results-header h2 {
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: 38px;
+  line-height: 1;
+}
+
+.dynasty-results-header > strong {
+  width: 118px;
+  height: 118px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #071018;
+  background: radial-gradient(circle at 35% 25%, #fff8c7, #f7c948, #b7791f);
+  font-size: 42px;
+  box-shadow: 0 0 40px rgba(247, 201, 72, 0.34);
+}
+
+.dynasty-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dynasty-result-grid > div,
+.chemistry-panel > div,
+.comparison-panel > div {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.52);
+}
+
+.dynasty-meters {
+  display: grid;
+  gap: 9px;
+}
+
+.dynasty-meter {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+}
+
+.dynasty-meter i {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.dynasty-meter b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #f7c948);
+}
+
+.dynasty-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dynasty-totals strong,
+.comparison-panel strong {
+  display: block;
+  margin-top: 6px;
+  color: #fff;
+  font-size: 22px;
+}
+
+.chemistry-panel,
+.comparison-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.chemistry-panel strong {
+  color: #fff;
+}
+
+.comparison-panel {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dynasty-share-card {
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(247, 201, 72, 0.18), rgba(34, 211, 238, 0.1)),
+    rgba(5, 8, 18, 0.78);
+}
+
+.dynasty-share-card h2 {
+  margin: 8px 0 0;
+  color: #fff;
+}
+
+.dynasty-share-card > strong {
+  display: block;
+  margin-top: 6px;
+  color: #f7c948;
+  font-size: 58px;
+  line-height: 1;
+}
+
+.dynasty-share-card p {
+  margin: 4px 0;
+  color: #dbe5ff;
+  font-weight: 950;
+}
+
+.dynasty-share-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.dynasty-share-card button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(247, 201, 72, 0.52);
+  border-radius: 8px;
+  color: #071018;
+  background: #f7c948;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.dynasty-share-card button:last-child {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .home-hero {
   min-height: 86svh;
   display: grid;
@@ -223,7 +877,7 @@
 .home-band.split {
   max-width: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   padding: 0;
   background: rgba(255, 255, 255, 0.08);
@@ -380,7 +1034,7 @@
 
 .ipl-hall {
   position: relative;
-  min-height: 100svh;
+  min-height: 150svh;
   padding: 72px 34px 84px;
   overflow: hidden visible;
   color: #f8fbff;
@@ -435,34 +1089,59 @@
   position: relative;
   z-index: 1;
   max-width: 1120px;
-  height: 58px;
-  margin: 0 auto 28px;
+  height: 46px;
+  margin: 10px auto 0;
+  touch-action: none;
 }
 
 .timeline-trail {
   position: absolute;
-  top: 27px;
-  left: 24px;
-  width: calc(100% - 48px);
-  height: 4px;
+  top: 22px;
+  left: 16px;
+  width: calc(100% - 32px);
+  height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #f7c948, #f97316, #8b5cf6, #22d3ee);
-  box-shadow: 0 0 24px rgba(247, 201, 72, 0.72);
+  background: linear-gradient(90deg, rgba(247, 201, 72, 0.9), rgba(249, 115, 22, 0.82), rgba(139, 92, 246, 0.78), rgba(34, 211, 238, 0.82));
+  box-shadow: 0 0 14px rgba(247, 201, 72, 0.38);
   transform: scaleX(0);
   transform-origin: left;
 }
 
+.timeline-launch-track::before {
+  position: absolute;
+  top: 22px;
+  left: 16px;
+  width: calc(100% - 32px);
+  height: 3px;
+  border-radius: 999px;
+  content: "";
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .timeline-ball {
   position: absolute;
-  top: 13px;
+  top: 7px;
   left: 0;
   width: 32px;
   height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 50%;
   background:
     linear-gradient(90deg, transparent 46%, rgba(255, 255, 255, 0.8) 47% 53%, transparent 54%),
     radial-gradient(circle at 35% 30%, #ff9f9f, #d72638 54%, #6d101d);
-  box-shadow: 0 0 22px rgba(247, 201, 72, 0.85);
+  box-shadow: 0 0 18px rgba(247, 201, 72, 0.58);
+  cursor: grab;
+  touch-action: none;
+}
+
+.timeline-ball:active {
+  cursor: grabbing;
+}
+
+.timeline-ball:focus-visible {
+  outline: 3px solid #f7c948;
+  outline-offset: 4px;
 }
 
 .season-showcase {
@@ -635,26 +1314,25 @@
   grid-auto-flow: column;
   gap: 8px;
   margin: 0 auto;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
-  padding: 2px 2px 20px;
-  scrollbar-color: color-mix(in srgb, var(--season-b) 82%, #fff) rgba(255, 255, 255, 0.1);
-  scrollbar-width: auto;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
 }
 
 .season-milestones::-webkit-scrollbar {
-  height: 14px;
+  display: none;
 }
 
 .season-milestones::-webkit-scrollbar-track {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .season-milestones::-webkit-scrollbar-thumb {
-  border: 2px solid rgba(5, 8, 18, 0.82);
+  border: 1px solid rgba(5, 8, 18, 0.82);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--season-b) 82%, #fff);
+  background: color-mix(in srgb, var(--season-b) 54%, rgba(255, 255, 255, 0.55));
 }
 
 .season-milestones::after {
@@ -853,6 +1531,24 @@
   letter-spacing: 0;
 }
 
+.archive-image-tbd span {
+  max-width: 92%;
+  font-size: 16px;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.champion-team-image .archive-image-tbd,
+.season-team-image .archive-image-tbd,
+.cap-player .archive-image-tbd,
+.season-awards .archive-image-tbd {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 16px;
+}
+
 .archive-image-fallback {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--season-a) 34%, transparent), rgba(255, 255, 255, 0.08)),
@@ -923,6 +1619,17 @@
 
   50% {
     transform: translateY(-6px) scale(1.04);
+  }
+}
+
+@keyframes slot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.34);
   }
 }
 
@@ -1005,9 +1712,21 @@ html {
   cursor: pointer;
 }
 
+.player-switch .home-nav-button {
+  min-width: 112px;
+  color: #071018;
+  background: #f7c948;
+  box-shadow: 0 0 0 1px rgba(247, 201, 72, 0.65), 0 10px 28px rgba(247, 201, 72, 0.2);
+}
+
 .player-switch button.active {
   color: #02030a;
   background: #e5e7eb;
+}
+
+.player-switch .home-nav-button.active {
+  color: #071018;
+  background: linear-gradient(180deg, #fff2a8, #f7c948);
 }
 
 .animations-page {
@@ -2185,6 +2904,35 @@ html {
   margin-bottom: 18px;
 }
 
+.result-reveal {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid rgba(247, 201, 72, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(247, 201, 72, 0.16), rgba(34, 211, 238, 0.08)),
+    rgba(255, 255, 255, 0.045);
+  text-align: center;
+}
+
+.result-reveal span {
+  color: var(--fan-cyan);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.result-reveal strong {
+  color: #fff;
+  font-size: 33px;
+  line-height: 0.98;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
 .result-card-top span,
 .runner-panel h2,
 .cloud-heading span {
@@ -2270,7 +3018,7 @@ html {
 
 .trait-row {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr) 34px;
+  grid-template-columns: 104px minmax(0, 1fr) 34px;
   gap: 10px;
   align-items: center;
 }
@@ -2303,6 +3051,129 @@ html {
   animation: meter-in 520ms ease both;
 }
 
+.result-stat-bars .trait-row div {
+  height: 9px;
+}
+
+.similar-player-section,
+.best-team-match,
+.share-result-card {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.similar-player-section > span,
+.best-team-match > span,
+.share-result-card > span,
+.best-team-match small,
+.share-result-card small {
+  display: block;
+  color: var(--fan-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.similar-player-section > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.similar-player-section strong {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(34, 211, 238, 0.07);
+  font-size: 12px;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.best-team-match {
+  border-color: color-mix(in srgb, var(--team-accent, #f7c948) 42%, rgba(255, 255, 255, 0.12));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--team-accent, #f7c948) 18%, transparent), rgba(255, 255, 255, 0.045)),
+    rgba(5, 10, 22, 0.72);
+}
+
+.best-team-match > strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.best-team-match small {
+  margin-top: 14px;
+  color: color-mix(in srgb, var(--team-accent, #f7c948) 78%, #fff);
+}
+
+.best-team-match ul {
+  display: grid;
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.best-team-match li {
+  color: #dbe5ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.share-result-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(247, 201, 72, 0.18), rgba(34, 211, 238, 0.11)),
+    rgba(5, 10, 22, 0.82);
+}
+
+.share-result-card > strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.share-result-card > div {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.share-result-card p {
+  color: #dbe5ff;
+  font-weight: 900;
+}
+
+.share-result-card button {
+  min-height: 38px;
+  margin-top: 14px;
+  padding: 0 14px;
+  border: 1px solid rgba(247, 201, 72, 0.62);
+  border-radius: 8px;
+  color: #06101e;
+  background: var(--fan-gold);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
 .evidence-list {
   display: grid;
   gap: 8px;
@@ -2322,7 +3193,7 @@ html {
 
 .result-actions {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 18px;
 }
@@ -2607,6 +3478,30 @@ html {
     grid-template-columns: 1fr;
   }
 
+  .dynasty-layout,
+  .dynasty-result-grid,
+  .comparison-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .dynasty-board {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .dynasty-player-market {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .dynasty-player-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .home-band.split > div {
     padding: 42px 20px;
   }
@@ -2762,6 +3657,34 @@ html {
 
   .home-team-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dynasty-player-grid,
+  .dynasty-validation,
+  .dynasty-totals,
+  .dynasty-results-header {
+    grid-template-columns: 1fr;
+  }
+
+  .dynasty-page {
+    padding: 82px 14px 72px;
+  }
+
+  .dynasty-hero h1 {
+    font-size: 38px;
+  }
+
+  .dynasty-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dynasty-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .dynasty-controls select {
+    width: 100%;
   }
 
   .floodlight-row {
