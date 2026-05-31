@@ -272,6 +272,24 @@ function useIsCompactLayout() {
   return isCompact
 }
 
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    return typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false
+  })
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handleChange = () => setPrefersReducedMotion(media.matches)
+
+    handleChange()
+    media.addEventListener('change', handleChange)
+
+    return () => media.removeEventListener('change', handleChange)
+  }, [])
+
+  return prefersReducedMotion
+}
+
 class AppErrorBoundary extends Component {
   constructor(props) {
     super(props)
@@ -375,7 +393,7 @@ function KnowledgeNetwork({ player, frame, sectionId, colors, embedded = false }
 
   return (
     <section
-      className={`network-stage ${player.theme} ${embedded ? 'embedded' : ''}`}
+      className={`network-stage pointer-reactive ${player.theme} ${embedded ? 'embedded' : ''}`}
       id={sectionId}
       style={toneStyle}
       aria-label={`${player.name} animated knowledge network`}
@@ -395,7 +413,7 @@ function KnowledgeNetwork({ player, frame, sectionId, colors, embedded = false }
         </div>
       </div>
 
-      <div className="network-map">
+      <div className="network-map pointer-reactive">
         <div className="aura aura-one" />
         <div className="aura aura-two" />
 
@@ -518,6 +536,92 @@ function getSeasonImage(season, imageType) {
   return iplSeasonImages.seasons[String(season.year)]?.[imageType]?.path ?? ''
 }
 
+function getSeasonImageMeta(season, imageType) {
+  return iplSeasonImages.seasons[String(season.year)]?.[imageType] ?? null
+}
+
+const wikipediaTitleOverrides = {
+  'David Warner': 'David Warner (cricketer)',
+  'KL Rahul': 'K. L. Rahul',
+  'RP Singh': 'R. P. Singh',
+}
+
+const directArchiveImageOverrides = {
+  'Harshal Patel': 'https://img.ipl.com/upload/20251106/7148d75045552eb9db20dc265b77c4e2.jpg',
+  'Prasidh Krishna': 'https://img.ipl.com/upload/20251224/a59a1510497c37689aed5691a66e1918.jpg',
+}
+
+function getArchiveImageSubject(season, imageType) {
+  if (imageType === 'champion') return season.champion
+  if (imageType === 'orangeCap') return season.orangeCap.winner
+  if (imageType === 'purpleCap') return season.purpleCap.winner
+  return ''
+}
+
+function shouldUseLocalSeasonImage(season, imageType) {
+  const image = getSeasonImageMeta(season, imageType)
+
+  return image?.status === 'manual-replacement'
+}
+
+function IplArchiveImage({ alt, imageType, season }) {
+  const imageMeta = getSeasonImageMeta(season, imageType)
+  const localPath = getSeasonImage(season, imageType)
+  const subject = getArchiveImageSubject(season, imageType)
+  const title = wikipediaTitleOverrides[subject] ?? subject
+  const directImageUrl = directArchiveImageOverrides[subject] ?? ''
+  const useLocalOnly = shouldUseLocalSeasonImage(season, imageType) || !title || title === 'Season in progress' || title === 'Live race'
+  const [wikiImage, setWikiImage] = useState({ title: '', url: '', hasError: false })
+  const initials = subject
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+  const hasWikiImage = wikiImage.title === title && wikiImage.url && !wikiImage.hasError
+  const isChampionLogo = imageType === 'champion'
+  const shouldShowLocal = useLocalOnly || imageMeta?.status !== 'placeholder'
+  const imageUrl = directImageUrl || (hasWikiImage ? wikiImage.url : shouldShowLocal ? localPath : '')
+  const imageClassName = isChampionLogo ? 'archive-logo-image' : 'archive-player-image'
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    if (useLocalOnly) return () => controller.abort()
+
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((data) => {
+        const thumbnail = data?.thumbnail?.source || data?.originalimage?.source
+        if (thumbnail) {
+          setWikiImage({ title, url: thumbnail, hasError: false })
+        } else {
+          setWikiImage({ title, url: '', hasError: true })
+        }
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setWikiImage({ title, url: '', hasError: true })
+        }
+      })
+
+    return () => controller.abort()
+  }, [title, useLocalOnly])
+
+  if (!imageUrl) {
+    return (
+      <div className="archive-image-fallback" role="img" aria-label={alt}>
+        <span>{initials || season.year}</span>
+      </div>
+    )
+  }
+
+  return <img alt={alt} className={imageClassName} src={imageUrl} onError={() => setWikiImage({ title, url: '', hasError: true })} />
+}
+
 function TeamSquadAnimation({ team, frame }) {
   const orderedPlayers = useMemo(() => {
     return [...team.players].sort(([leftName, , leftRole], [rightName, , rightRole]) => {
@@ -546,12 +650,11 @@ function TeamSquadAnimation({ team, frame }) {
       selectedPlayer[2],
     )
   }, [selectedPlayer, selectedPlayerIndex, team])
-  const visibleCount = Math.min(orderedPlayers.length, Math.max(0, Math.floor((frame - 35) / 18)))
   const overseasCount = orderedPlayers.filter(([, nationality]) => nationality !== 'India').length
 
   return (
     <section
-      className={`team-squad-stage ${team.id}`}
+      className={`team-squad-stage pointer-reactive ${team.id}`}
       id={`${team.id}-team`}
       style={{
         '--team-accent': team.colors.accent,
@@ -578,7 +681,7 @@ function TeamSquadAnimation({ team, frame }) {
             <button
               className={[
                 'team-player-card',
-                index < visibleCount ? 'visible' : '',
+                'visible',
                 selectedPlayerName === name ? 'selected' : '',
               ]
                 .filter(Boolean)
@@ -653,24 +756,33 @@ function VisualizationsPage({ frame }) {
 
 function IplMuseumScene() {
   const canvasRef = useRef(null)
+  const isCompact = useIsCompactLayout()
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   useEffect(() => {
+    if (isCompact || prefersReducedMotion) return undefined
+
     const canvas = canvasRef.current
     if (!canvas) return undefined
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: false,
+      powerPreference: 'low-power',
+    })
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
     const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(1.25, 64, 64),
+      new THREE.SphereGeometry(1.25, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0xd72638, roughness: 0.36, metalness: 0.18 }),
     )
     const seam = new THREE.Mesh(
-      new THREE.TorusGeometry(1.27, 0.025, 16, 96),
+      new THREE.TorusGeometry(1.27, 0.025, 10, 56),
       new THREE.MeshBasicMaterial({ color: 0xf8fafc }),
     )
     const trophy = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.4, 0.72, 1.6, 40),
+      new THREE.CylinderGeometry(0.4, 0.72, 1.6, 24),
       new THREE.MeshStandardMaterial({ color: 0xf7c948, roughness: 0.2, metalness: 0.85 }),
     )
     const lights = [-4, -2, 0, 2, 4].map((x, index) => {
@@ -690,27 +802,38 @@ function IplMuseumScene() {
 
     const resize = () => {
       const { clientWidth, clientHeight } = canvas
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
       renderer.setSize(clientWidth, clientHeight, false)
       camera.aspect = clientWidth / Math.max(clientHeight, 1)
       camera.updateProjectionMatrix()
     }
 
     let frameId = 0
+    let isVisible = true
     const render = () => {
+      if (!isVisible) {
+        frameId = requestAnimationFrame(render)
+        return
+      }
+
       ball.rotation.y += 0.014
       ball.rotation.x += 0.006
       trophy.rotation.y += 0.004
       renderer.render(scene, camera)
       frameId = requestAnimationFrame(render)
     }
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting
+    })
 
     resize()
+    observer.observe(canvas)
     render()
     window.addEventListener('resize', resize)
 
     return () => {
       cancelAnimationFrame(frameId)
+      observer.disconnect()
       window.removeEventListener('resize', resize)
       lights.forEach((light) => scene.remove(light))
       renderer.dispose()
@@ -718,7 +841,19 @@ function IplMuseumScene() {
       seam.geometry.dispose()
       trophy.geometry.dispose()
     }
-  }, [])
+  }, [isCompact, prefersReducedMotion])
+
+  if (isCompact || prefersReducedMotion) {
+    return (
+      <div className="ipl-museum-placeholder" aria-hidden="true">
+        <div className="placeholder-icon" />
+        <div className="placeholder-copy">
+          <strong>IPL Stadium Ready</strong>
+          <span>Lightweight mode keeps navigation responsive.</span>
+        </div>
+      </div>
+    )
+  }
 
   return <canvas className="ipl-museum-canvas" ref={canvasRef} aria-label="Spinning cricket ball in stadium lights" />
 }
@@ -747,7 +882,7 @@ function SeasonModal({ season, onClose }) {
           <div className="season-modal-grid">
             <div className="season-champion-panel" style={{ '--season-a': season.colors[0], '--season-b': season.colors[1] }}>
               <div className="season-team-image" aria-label={`${season.champion} winning team image`}>
-                <img alt={`${season.champion} ${season.year} winning team`} src={getSeasonImage(season, 'champion')} />
+                <IplArchiveImage alt={`${season.champion} ${season.year} winning team`} imageType="champion" season={season} />
                 <span>{season.year}</span>
                 <strong>{season.champion}</strong>
                 <small>Winning team</small>
@@ -764,13 +899,13 @@ function SeasonModal({ season, onClose }) {
             <div className="season-modal-copy">
               <div className="season-awards">
                 <div>
-                  <img alt={`${season.orangeCap.winner} portrait`} src={getSeasonImage(season, 'orangeCap')} />
+                  <IplArchiveImage alt={`${season.orangeCap.winner} portrait`} imageType="orangeCap" season={season} />
                   <span>Orange Cap</span>
                   <strong>{season.orangeCap.winner}</strong>
                   <small>{season.orangeCap.runs} runs</small>
                 </div>
                 <div>
-                  <img alt={`${season.purpleCap.winner} portrait`} src={getSeasonImage(season, 'purpleCap')} />
+                  <IplArchiveImage alt={`${season.purpleCap.winner} portrait`} imageType="purpleCap" season={season} />
                   <span>Purple Cap</span>
                   <strong>{season.purpleCap.winner}</strong>
                   <small>{season.purpleCap.wickets} wickets</small>
@@ -855,7 +990,7 @@ function IplHallTimeline({ seasons }) {
       <div className="season-showcase" style={{ '--season-a': activeSeason.colors[0], '--season-b': activeSeason.colors[1] }}>
         <motion.div animate={{ y: -8, rotateX: 8 }} className="champion-card" key={activeSeason.year}>
           <div className="champion-team-image" aria-hidden="true">
-            <img alt="" src={getSeasonImage(activeSeason, 'champion')} />
+            <IplArchiveImage alt="" imageType="champion" season={activeSeason} />
             <span>{activeSeason.year}</span>
             <strong>{activeSeason.champion}</strong>
           </div>
@@ -864,14 +999,14 @@ function IplHallTimeline({ seasons }) {
           <small>{activeSeason.finalScore}</small>
         </motion.div>
         <div className="cap-player orange-cap">
-          <img alt={`${activeSeason.orangeCap.winner} portrait`} src={getSeasonImage(activeSeason, 'orangeCap')} />
+          <IplArchiveImage alt={`${activeSeason.orangeCap.winner} portrait`} imageType="orangeCap" season={activeSeason} />
           <span>Orange Cap</span>
           <strong>{activeSeason.orangeCap.winner}</strong>
           <small>{activeSeason.orangeCap.runs} runs</small>
         </div>
         <div className="trophy-pulse">IPL</div>
         <div className="cap-player purple-cap">
-          <img alt={`${activeSeason.purpleCap.winner} portrait`} src={getSeasonImage(activeSeason, 'purpleCap')} />
+          <IplArchiveImage alt={`${activeSeason.purpleCap.winner} portrait`} imageType="purpleCap" season={activeSeason} />
           <span>Purple Cap</span>
           <strong>{activeSeason.purpleCap.winner}</strong>
           <small>{activeSeason.purpleCap.wickets} wickets</small>
@@ -1083,7 +1218,66 @@ function scoreProfiles(answers) {
 
       return { ...profile, match, score }
     })
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .sort((a, b) => b.match - a.match || b.score - a.score || a.name.localeCompare(b.name))
+}
+
+function getWikipediaTitle(wikipediaUrl) {
+  try {
+    const url = new URL(wikipediaUrl)
+    return decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1) ?? '')
+  } catch {
+    return ''
+  }
+}
+
+function ResultPortrait({ player }) {
+  const title = useMemo(() => getWikipediaTitle(player.wikipedia), [player.wikipedia])
+  const [portrait, setPortrait] = useState({ title: '', imageUrl: '', hasError: false })
+  const initials = player.name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+  const imageUrl = portrait.title === title && !portrait.hasError ? portrait.imageUrl : ''
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    if (!title) return () => controller.abort()
+
+    fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((data) => {
+        const thumbnail = data?.thumbnail?.source || data?.originalimage?.source
+        if (thumbnail) {
+          setPortrait({ title, imageUrl: thumbnail, hasError: false })
+        }
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setPortrait({ title, imageUrl: '', hasError: true })
+        }
+      })
+
+    return () => controller.abort()
+  }, [title])
+
+  return (
+    <div className="result-portrait" aria-label={`${player.name} portrait`}>
+      {imageUrl ? (
+        <img
+          alt={`${player.name} portrait`}
+          src={imageUrl}
+          onError={() => setPortrait({ title, imageUrl: '', hasError: true })}
+        />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  )
 }
 
 function FanPersonalityTest() {
@@ -1110,9 +1304,12 @@ function FanPersonalityTest() {
       .sort(([, leftValue], [, rightValue]) => rightValue - leftValue)
       .slice(0, 4)
   }, [winner.traits])
+  const revealResult = () => {
+    setShowResult(true)
+  }
 
   return (
-    <section className="fan-stage" aria-label="Cricketer personality test">
+    <section className="fan-stage pointer-reactive" aria-label="Cricketer personality test">
       <div className="fan-hero">
         <div>
           <span className="fan-kicker">Fan Quiz</span>
@@ -1175,6 +1372,7 @@ function FanPersonalityTest() {
           <div className="result-card">
             {showResult ? (
               <>
+                <ResultPortrait player={winner} />
                 <div className="result-card-top">
                   <span>Your Match</span>
                   <a href={winner.wikipedia} rel="noreferrer" target="_blank">
@@ -1226,7 +1424,7 @@ function FanPersonalityTest() {
             <div className="result-actions">
               <button
                 disabled={!isComplete}
-                onClick={() => setShowResult(true)}
+                onClick={revealResult}
                 type="button"
               >
                 Submit Quiz
@@ -1263,6 +1461,16 @@ function FanPersonalityTest() {
         </aside>
       </div>
 
+      <div className="quiz-submit-dock" aria-label="Quiz submit controls">
+        <div>
+          <span>{showResult ? `${winner.match}% match` : `${answeredCount}/${quizQuestions.length}`}</span>
+          <strong>{showResult ? winner.name : isComplete ? 'Ready to reveal' : `${quizQuestions.length - answeredCount} left`}</strong>
+        </div>
+        <button disabled={!isComplete} onClick={revealResult} type="button">
+          {showResult ? 'Result Shown' : 'Submit Quiz'}
+        </button>
+      </div>
+
       <div className="player-cloud" aria-label="Available cricketer match pool">
         <div className="cloud-heading">
           <span>Match Pool</span>
@@ -1281,6 +1489,10 @@ function FanPersonalityTest() {
 }
 
 function App() {
+  const backdropRef = useRef(null)
+  const pointerTargetRef = useRef(null)
+  const pendingPointerRef = useRef(null)
+  const pointerFrameRef = useRef(0)
   const getInitialView = () => {
     if (typeof window !== 'undefined' && window.location.pathname === '/fan-test') {
       return 'fan'
@@ -1319,19 +1531,58 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (pointerFrameRef.current) {
+        cancelAnimationFrame(pointerFrameRef.current)
+      }
+    }
+  }, [])
+
   return (
     <main
       className="app-shell"
       onPointerMove={(event) => {
-        const x = Math.round((event.clientX / window.innerWidth) * 100)
-        const y = Math.round((event.clientY / window.innerHeight) * 100)
+        if (event.pointerType !== 'mouse') return
 
-        event.currentTarget.style.setProperty('--pointer-x', `${x}%`)
-        event.currentTarget.style.setProperty('--pointer-y', `${y}%`)
+        const target = event.target instanceof Element ? event.target.closest('.pointer-reactive') : null
+        const viewportPointer = {
+          x: Math.round((event.clientX / window.innerWidth) * 100),
+          y: Math.round((event.clientY / window.innerHeight) * 100),
+        }
+        let targetPointer = null
+
+        if (target) {
+          const bounds = target.getBoundingClientRect()
+          targetPointer = {
+            x: Math.round(Math.min(100, Math.max(0, ((event.clientX - bounds.left) / Math.max(bounds.width, 1)) * 100))),
+            y: Math.round(Math.min(100, Math.max(0, ((event.clientY - bounds.top) / Math.max(bounds.height, 1)) * 100))),
+          }
+        }
+
+        pointerTargetRef.current = target
+        pendingPointerRef.current = { target: targetPointer, viewport: viewportPointer }
+
+        if (pointerFrameRef.current) return
+
+        pointerFrameRef.current = requestAnimationFrame(() => {
+          const pointer = pendingPointerRef.current
+
+          if (pointer?.viewport && backdropRef.current) {
+            backdropRef.current.style.setProperty('--pointer-x', `${pointer.viewport.x}%`)
+            backdropRef.current.style.setProperty('--pointer-y', `${pointer.viewport.y}%`)
+          }
+
+          if (pointer?.target && pointerTargetRef.current) {
+            pointerTargetRef.current.style.setProperty('--pointer-x', `${pointer.target.x}%`)
+            pointerTargetRef.current.style.setProperty('--pointer-y', `${pointer.target.y}%`)
+          }
+
+          pointerFrameRef.current = 0
+        })
       }}
-      style={{ '--pointer-x': '50%', '--pointer-y': '34%' }}
     >
-      <div className="interactive-backdrop" aria-hidden="true" />
+      <div className="interactive-backdrop" ref={backdropRef} aria-hidden="true" />
       <nav className="player-switch" aria-label="Primary navigation">
         <button
           className={activeView === 'home' ? 'active' : ''}

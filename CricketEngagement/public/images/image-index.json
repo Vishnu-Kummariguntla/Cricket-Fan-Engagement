@@ -4,10 +4,10 @@
   "seasons": {
     "2008": {
       "champion": {
-        "path": "/images/champions/2008-rajasthan-royals.svg",
-        "status": "placeholder",
+        "path": "/images/champions/2008-rajasthan-royals.avif",
+        "status": "manual-replacement",
         "query": "2008 Rajasthan Royals IPL trophy celebration",
-        "note": "No suitable Wikimedia Commons image was found automatically. Replace manually with a licensed photo if needed."
+        "mime": "image/avif"
       },
       "orangeCap": {
         "path": "/images/orangecaps/2008-shaun-marsh.svg",
@@ -204,7 +204,7 @@
         "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cricket_(Hutchinson,_1903).djvu",
         "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/Cricket_%28Hutchinson%2C_1903%29.djvu",
         "query": "David Warner cricketer portrait",
-        "mime": "image/vnd.djvu"
+        "mime": "image/jpeg"
       },
       "purpleCap": {
         "path": "/images/purplecaps/2015-dwayne-bravo.svg",
@@ -294,7 +294,7 @@
         "sourceUrl": "https://commons.wikimedia.org/wiki/File:My_Own_Fairy_Book_(Andrew_Lang).djvu",
         "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/78/My_Own_Fairy_Book_%28Andrew_Lang%29.djvu",
         "query": "Andrew Tye cricketer portrait",
-        "mime": "image/vnd.djvu"
+        "mime": "image/jpeg"
       },
       "logo": {
         "path": "/images/logos/chennai-super-kings.svg",
@@ -317,7 +317,7 @@
         "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cricket_(Hutchinson,_1903).djvu",
         "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/Cricket_%28Hutchinson%2C_1903%29.djvu",
         "query": "David Warner cricketer portrait",
-        "mime": "image/vnd.djvu"
+        "mime": "image/jpeg"
       },
       "purpleCap": {
         "path": "/images/purplecaps/2019-imran-tahir.svg",
@@ -511,7 +511,7 @@
         "sourceUrl": "https://commons.wikimedia.org/wiki/File:Poems_By_Chauncy_Hare_Townshend.djvu",
         "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Poems_By_Chauncy_Hare_Townshend.djvu",
         "query": "Live race cricketer portrait",
-        "mime": "image/vnd.djvu"
+        "mime": "image/jpeg"
       },
       "logo": null
     }
