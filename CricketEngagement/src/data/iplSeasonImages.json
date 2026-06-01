@@ -496,27 +496,29 @@
     },
     "2026": {
       "champion": {
-        "path": "/images/champions/2026-season-in-progress.svg",
+        "path": "/images/champions/2026-royal-challengers-bengaluru.svg",
         "status": "placeholder",
-        "query": "2026 Season in progress IPL trophy celebration",
-        "note": "No suitable Wikimedia Commons image was found automatically. Replace manually with a licensed photo if needed."
+        "query": "Royal Challengers Bengaluru 2026 IPL champion trophy celebration",
+        "note": "Custom rendered season card. Replace manually with a licensed trophy celebration photo if needed."
       },
       "orangeCap": {
-        "path": "/images/orangecaps/2026-live-race.svg",
+        "path": "/images/orangecaps/2026-vaibhav-sooryavanshi.svg",
         "status": "placeholder",
-        "query": "Live race cricketer portrait",
-        "note": "No suitable Wikimedia Commons image was found automatically. Replace manually with a licensed photo if needed."
+        "query": "Vaibhav Sooryavanshi IPL 2026 Orange Cap portrait",
+        "note": "Custom rendered Orange Cap card. Replace manually with a licensed player photo if needed."
       },
       "purpleCap": {
-        "path": "/images/purplecaps/2026-live-race.jpg",
-        "status": "downloaded",
-        "sourceTitle": "File:Poems By Chauncy Hare Townshend.djvu",
-        "sourceUrl": "https://commons.wikimedia.org/wiki/File:Poems_By_Chauncy_Hare_Townshend.djvu",
-        "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Poems_By_Chauncy_Hare_Townshend.djvu",
-        "query": "Live race cricketer portrait",
-        "mime": "image/jpeg"
+        "path": "/images/purplecaps/2026-kagiso-rabada.svg",
+        "status": "placeholder",
+        "query": "Kagiso Rabada IPL 2026 Purple Cap portrait",
+        "note": "Custom rendered Purple Cap card. Replace manually with a licensed player photo if needed."
       },
-      "logo": null
+      "logo": {
+        "path": "/images/logos/royal-challengers-bengaluru.svg",
+        "status": "placeholder",
+        "query": "Royal Challengers Bengaluru logo cricket",
+        "note": "Existing local logo asset."
+      }
     }
   },
   "logos": {

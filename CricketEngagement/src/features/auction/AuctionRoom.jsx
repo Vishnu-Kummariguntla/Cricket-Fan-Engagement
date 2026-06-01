@@ -17,6 +17,14 @@ import {
 const phaseOrder = ['Open bidding', 'Going once', 'Going twice']
 const bidSeconds = 8
 
+function getBotDuelLimit(player) {
+  if (!player) return 0
+  if (player.estimatedMarketValue >= 18) return 18
+  if (player.estimatedMarketValue >= 10) return 14
+  if (player.estimatedMarketValue >= 5) return 10
+  return 6
+}
+
 export default function AuctionRoom({
   userTeamId,
   teams,
@@ -131,7 +139,7 @@ export default function AuctionRoom({
     setBotThinking(false)
     if (botResult.logEntries.length) {
       botQuietKeyRef.current = ''
-      if (userPassed) botDuelCountRef.current += 1
+      botDuelCountRef.current += 1
     } else if (userPassed) {
       botQuietKeyRef.current = `${playerIndex}-${player.name}-${botResult.highestBidderId || 'none'}-${botResult.currentBid}`
     }
@@ -261,6 +269,14 @@ export default function AuctionRoom({
 
     return undefined
   }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid])
+
+  useEffect(() => {
+    if (!player || userPassed || saleBanner || botThinking || !highestBidderId || highestBidderId === userTeamId) return undefined
+    if (botDuelCountRef.current >= getBotDuelLimit(player)) return undefined
+    scheduleBotRound(currentBid, highestBidderId, getBotBidIncrement(player, currentBid), teams, 1050 + Math.round(Math.random() * 1100))
+
+    return undefined
+  }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid, userTeamId])
 
   return (
     <section className="auction-page auction-room-page" style={{ '--auction-accent': userTeam.colors.accent, '--auction-secondary': userTeam.colors.secondary }}>

@@ -827,6 +827,11 @@
   letter-spacing: 0;
 }
 
+.home-band.split h2 {
+  font-size: 24px;
+  line-height: 1.12;
+}
+
 .home-team-grid {
   max-width: 1120px;
   display: grid;
@@ -837,6 +842,7 @@
 
 .home-team-grid button,
 .featured-carousel button {
+  position: relative;
   min-height: 128px;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--team-accent, #f7c948) 54%, rgba(255, 255, 255, 0.16));
@@ -848,6 +854,42 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+}
+
+.home-team-grid button {
+  min-height: 164px;
+  padding: 18px;
+  isolation: isolate;
+}
+
+.home-team-grid button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--team-accent, #f7c948) 24%, transparent), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 52%);
+}
+
+.home-team-logo {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  border: 1px solid color-mix(in srgb, var(--team-accent, #f7c948) 54%, rgba(255, 255, 255, 0.18));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.13), transparent 60%),
+    rgba(5, 8, 18, 0.74);
+}
+
+.home-team-logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
 }
 
 .home-team-grid button span,
@@ -875,30 +917,39 @@
 }
 
 .home-band.split {
-  max-width: none;
+  max-width: 1280px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  padding: 0;
-  background: rgba(255, 255, 255, 0.08);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 auto;
+  padding: 22px 34px 56px;
+  background: #050812;
 }
 
 .home-band.split > div {
-  padding: 52px 34px;
-  background: #071018;
-  text-align: center;
+  display: flex;
+  min-height: 310px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(247, 201, 72, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    #071018;
+  text-align: left;
 }
 
 .home-band.split p {
-  max-width: 560px;
-  margin: 14px auto 0;
+  margin: 14px 0 0;
   color: #c3cdea;
   line-height: 1.55;
 }
 
 .home-band.split button {
-  margin-right: auto;
-  margin-left: auto;
+  width: 100%;
+  margin-top: 24px;
 }
 
 .featured-carousel {
@@ -1763,18 +1814,27 @@ html {
 
 .scrollbar-track a {
   position: relative;
-  display: block;
-  width: 14px;
-  height: 14px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
   border: 1px solid rgba(226, 232, 240, 0.42);
   border-radius: 50%;
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(5, 8, 18, 0.86);
   text-decoration: none;
+  overflow: hidden;
   transition:
     border-color 180ms ease,
     background 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+.scrollbar-track a img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
 }
 
 .scrollbar-track a::after {
@@ -1802,7 +1862,7 @@ html {
 .scrollbar-track a:hover,
 .scrollbar-track a:focus-visible {
   border-color: rgba(226, 232, 240, 0.95);
-  background: #e5e7eb;
+  background: rgba(226, 232, 240, 0.92);
   box-shadow: 0 0 14px rgba(226, 232, 240, 0.42);
   outline: 0;
   transform: scale(1.18);
@@ -2353,8 +2413,8 @@ html {
 }
 
 .team-mark {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
@@ -2362,14 +2422,18 @@ html {
   border-radius: 50%;
   color: #fff;
   background:
-    radial-gradient(circle, color-mix(in srgb, var(--team-accent) 32%, transparent), rgba(0, 0, 0, 0.72)),
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.16), transparent 58%),
+    radial-gradient(circle, color-mix(in srgb, var(--team-accent) 24%, transparent), rgba(0, 0, 0, 0.74)),
     linear-gradient(135deg, var(--team-accent), var(--team-secondary) 62%, var(--team-tertiary, var(--team-secondary)));
   box-shadow: 0 0 34px color-mix(in srgb, var(--team-accent) 34%, transparent);
+  overflow: hidden;
 }
 
-.team-mark span {
-  font-size: 20px;
-  font-weight: 950;
+.team-mark img {
+  width: 66px;
+  height: 66px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.42));
 }
 
 .team-squad-header h2 {
@@ -3545,6 +3609,26 @@ html {
     rgba(255, 255, 255, 0.055);
 }
 
+.auction-franchise-logo {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--auction-accent, #f7c948) 58%, rgba(255, 255, 255, 0.18));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.16), transparent 58%),
+    color-mix(in srgb, var(--auction-accent, #f7c948) 20%, rgba(5, 8, 18, 0.92));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--auction-accent, #f7c948) 24%, transparent);
+  overflow: hidden;
+}
+
+.auction-franchise-logo img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
 .auction-franchise-card:hover,
 .auction-franchise-card:focus-visible {
   border-color: color-mix(in srgb, var(--auction-accent) 70%, white);
@@ -4365,12 +4449,17 @@ html {
     font-size: 34px;
   }
 
+  .home-band.split h2 {
+    font-size: 26px;
+  }
+
   .home-team-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-band.split {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 18px 20px 44px;
   }
 
   .dynasty-layout,
@@ -4428,7 +4517,8 @@ html {
   }
 
   .home-band.split > div {
-    padding: 42px 20px;
+    min-height: 260px;
+    padding: 22px;
   }
 
   .ipl-hall {
@@ -4582,6 +4672,12 @@ html {
 
   .home-team-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-band.split {
+    grid-template-columns: 1fr;
+    padding-right: 14px;
+    padding-left: 14px;
   }
 
   .dynasty-player-grid,

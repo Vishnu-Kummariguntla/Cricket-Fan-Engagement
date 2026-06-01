@@ -1,4 +1,5 @@
 import { getFranchiseProfile } from './botStrategies'
+import { getAuctionSalaryAnchor } from './auctionSalaryData'
 
 const activePlayerNames = new Set([
   'Virat Kohli',
@@ -162,7 +163,24 @@ function isOverseas(nationality) {
 }
 
 function getRecentMarketValue(name) {
-  return recentAuctionValueCr[name] ?? retainedMarketValueCr[name] ?? 0
+  return getAuctionSalaryAnchor(name)?.salaryCr ?? recentAuctionValueCr[name] ?? retainedMarketValueCr[name] ?? 0
+}
+
+function getSalaryAnchoredMarketValue(anchorValue, ratingMarketValue, basePrice) {
+  if (!anchorValue) return ratingMarketValue
+
+  const qualityAdjustment = Math.max(-0.6, Math.min(1.2, (ratingMarketValue - anchorValue) * 0.12))
+  const softCeiling = anchorValue >= 12 ? anchorValue * 1.12 : anchorValue >= 5 ? anchorValue * 1.16 : anchorValue * 1.25
+  return Math.max(basePrice, Math.min(softCeiling, anchorValue + qualityAdjustment))
+}
+
+function getBasePrice(name, overseas, anchorValue) {
+  if (anchorValue) {
+    if (anchorValue <= 0.5) return 0.3
+    if (anchorValue <= 1) return 0.5
+  }
+
+  return marqueePlayers.has(name) ? 2 : overseas ? 1.5 : 1
 }
 
 export function createAuctionPlayers(iplTeams, featuredAnimations = {}, cricketerProfiles = []) {
@@ -172,7 +190,8 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
 
   iplTeams.forEach((team) => {
     team.players.forEach(([name, nationality, role]) => {
-      if (!activePlayerNames.has(name) && !profileNames.has(name) && !featuredNames.has(name)) return
+      const salaryAnchor = getAuctionSalaryAnchor(name)
+      if (!activePlayerNames.has(name) && !profileNames.has(name) && !featuredNames.has(name) && !salaryAnchor) return
       if (byName.has(name)) return
 
       const hash = hashName(name)
@@ -185,14 +204,14 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
       const formRating = Math.min(99, 55 + ((hash * 7) % 34) + (activePlayerNames.has(name) ? 4 : 0))
       const legacyRating = Math.min(99, 52 + ((hash * 13) % 28) + starBoost + (hasCareerStory ? 7 : 0))
       const scarcityBoost = role === 'keeper' ? 1.4 : role === 'allrounder' ? 1.1 : role === 'bowler' ? 0.8 : 0
-      const basePrice = marqueePlayers.has(name) ? 2 : overseas ? 1.5 : 1
+      const basePrice = getBasePrice(name, overseas, salaryAnchor?.salaryCr)
       const ratingMarketValue = Math.min(
         28,
         Math.max(1.5, basePrice + starRating * 0.12 + formRating * 0.055 + legacyRating * 0.05 + scarcityBoost),
       )
       const recentMarketValue = getRecentMarketValue(name)
       const estimatedMarketValue = recentMarketValue
-        ? Math.max(ratingMarketValue, recentMarketValue)
+        ? getSalaryAnchoredMarketValue(recentMarketValue, ratingMarketValue, basePrice)
         : ratingMarketValue
 
       byName.set(name, {
@@ -206,6 +225,7 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
         basePrice,
         estimatedMarketValue: Number(estimatedMarketValue.toFixed(1)),
         recentMarketValue,
+        salaryAnchor,
         starRating,
         formRating,
         legacyRating,
@@ -270,20 +290,23 @@ export function evaluateBotInterest(team, player, currentBid, scarcity = 1) {
 
 function getBotBidCeiling(team, player) {
   const priorities = team.profile.priorities
-  const riskMultiplier = priorities.risk && priorities.risk > 1.15 ? 1.12 : priorities.risk && priorities.risk < 0.9 ? 0.98 : 1.05
+  const riskMultiplier = priorities.risk && priorities.risk > 1.15 ? 1.08 : priorities.risk && priorities.risk < 0.9 ? 0.96 : 1.02
   const rolePremium =
     player.role === 'keeper'
-      ? 1.04
+      ? 1.03
       : player.role === 'allrounder'
-        ? 1.06
+        ? 1.04
         : player.role === 'bowler'
-          ? 1.04
+          ? 1.03
           : 1
-  const starPremium = marqueePlayers.has(player.name) || player.recentMarketValue >= 12 ? 1.12 : 1.02
+  const starPremium = marqueePlayers.has(player.name) || player.recentMarketValue >= 12 ? 1.06 : 1
   const ceiling = player.estimatedMarketValue * riskMultiplier * rolePremium * starPremium
-  const purseCap = player.estimatedMarketValue >= 18 ? 0.34 : player.estimatedMarketValue >= 10 ? 0.28 : 0.22
+  const slotsLeft = Math.max(1, maxSquadSize - team.squad.length)
+  const reserveForMinimumBuys = Math.max(0, slotsLeft - 1) * 0.3
+  const spendablePurse = Math.max(0, team.purse - reserveForMinimumBuys)
+  const purseCap = player.estimatedMarketValue >= 18 ? 0.24 : player.estimatedMarketValue >= 10 ? 0.2 : player.estimatedMarketValue >= 5 ? 0.16 : 0.1
 
-  return Math.min(team.purse * purseCap, Math.max(player.basePrice, Number(ceiling.toFixed(1))))
+  return Math.min(spendablePurse, team.purse * purseCap, Math.max(player.basePrice, Number(ceiling.toFixed(1))))
 }
 
 export function getBotBidIncrement(player, currentBid) {
@@ -304,19 +327,27 @@ export function runBotBids({ teams, userTeamId, player, currentBid, highestBidde
     .sort((left, right) => evaluateBotInterest(right, player, nextBid) - evaluateBotInterest(left, player, nextBid))
   const bidder = interestedTeams.find((team) => {
       const interest = evaluateBotInterest(team, player, nextBid)
-      const premiumDiscount = Math.min(18, Math.max(0, player.estimatedMarketValue - 6))
+      const marketGap = Math.max(0, player.estimatedMarketValue - nextBid)
+      const premiumDiscount = Math.min(20, Math.max(0, player.estimatedMarketValue - 5))
       const threshold = increment === 0
-        ? 52 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 12) - premiumDiscount * 0.65
-        : 80 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 16) - premiumDiscount
+        ? 44 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 10) - premiumDiscount * 0.75
+        : 67 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 14) - premiumDiscount - marketGap * 1.6
       const ceiling = getBotBidCeiling(team, player)
 
       return team.id !== nextHighestBidderId && interest > threshold && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
-    }) ?? (increment === 0
+    }) ?? (nextBid <= player.estimatedMarketValue * 0.82
       ? interestedTeams.find((team) => {
         const interest = evaluateBotInterest(team, player, nextBid)
         const ceiling = getBotBidCeiling(team, player)
 
-        return team.id !== nextHighestBidderId && interest > 36 && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
+        return team.id !== nextHighestBidderId && interest > 24 && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
+      })
+      : undefined) ?? (increment === 0
+      ? interestedTeams.find((team) => {
+        const interest = evaluateBotInterest(team, player, nextBid)
+        const ceiling = getBotBidCeiling(team, player)
+
+        return team.id !== nextHighestBidderId && interest > 28 && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
       })
       : undefined)
 

@@ -1,6 +1,19 @@
 import { motion } from 'framer-motion'
 import { getFranchiseProfile } from './botStrategies'
 
+const teamLogoPaths = {
+  csk: '/images/logos/chennai-super-kings.svg',
+  dc: '/images/logos/delhi-capitals.svg',
+  gt: '/images/logos/gujarat-titans.svg',
+  kkr: '/images/logos/kolkata-knight-riders.svg',
+  lsg: '/images/logos/lucknow-super-giants.svg',
+  mi: '/images/logos/mumbai-indians.svg',
+  pbks: '/images/logos/punjab-kings.svg',
+  rr: '/images/logos/rajasthan-royals.png',
+  rcb: '/images/logos/royal-challengers-bengaluru.svg',
+  srh: '/images/logos/sunrisers-hyderabad.svg',
+}
+
 export default function AuctionSetup({ teams, onSelectTeam }) {
   return (
     <section className="auction-page auction-setup-page">
@@ -25,7 +38,9 @@ export default function AuctionSetup({ teams, onSelectTeam }) {
               transition={{ delay: index * 0.018 }}
               type="button"
             >
-              <div className="auction-logo-mark">{team.shortName}</div>
+              <div className="auction-franchise-logo">
+                <img alt={`${team.name} logo`} src={teamLogoPaths[team.id]} />
+              </div>
               <span>{profile.stadium}</span>
               <strong>{team.name}</strong>
               <small>{profile.identity}</small>

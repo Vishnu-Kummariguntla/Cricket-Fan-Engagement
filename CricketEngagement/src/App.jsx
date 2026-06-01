@@ -42,6 +42,19 @@ const roleLabels = {
   bowler: 'Bowler',
 }
 
+const teamLogoPaths = {
+  csk: '/images/logos/chennai-super-kings.svg',
+  dc: '/images/logos/delhi-capitals.svg',
+  gt: '/images/logos/gujarat-titans.svg',
+  kkr: '/images/logos/kolkata-knight-riders.svg',
+  lsg: '/images/logos/lucknow-super-giants.svg',
+  mi: '/images/logos/mumbai-indians.svg',
+  pbks: '/images/logos/punjab-kings.svg',
+  rr: '/images/logos/rajasthan-royals.png',
+  rcb: '/images/logos/royal-challengers-bengaluru.svg',
+  srh: '/images/logos/sunrisers-hyderabad.svg',
+}
+
 const wicketkeepers = new Set(playerMeta.roleGroups.wicketkeepers)
 const allrounders = new Set(playerMeta.roleGroups.allrounders)
 const bowlers = new Set(playerMeta.roleGroups.bowlers)
@@ -685,7 +698,7 @@ function TeamSquadAnimation({ team, frame }) {
     >
       <div className="team-squad-header">
         <div className="team-mark">
-          <span>{team.shortName}</span>
+          <img alt={`${team.name} logo`} src={teamLogoPaths[team.id]} />
         </div>
         <div>
           <h2>{team.name}</h2>
@@ -759,6 +772,7 @@ function VisualizationsPage({ frame }) {
               aria-label={`Jump to ${team.name} squad`}
               data-team={team.shortName}
             >
+              <img alt="" aria-hidden="true" src={teamLogoPaths[team.id]} />
               <span>{String(index + 1).padStart(2, '0')}</span>
             </a>
           ))}
@@ -1215,6 +1229,9 @@ function HomePage({ onNavigate }) {
               style={{ '--team-accent': team.colors.accent, '--team-secondary': team.colors.secondary }}
               type="button"
             >
+              <span className="home-team-logo">
+                <img alt="" aria-hidden="true" src={teamLogoPaths[team.id]} />
+              </span>
               <span>{team.shortName}</span>
               <strong>{team.name}</strong>
               <small>Captain: {team.captain}</small>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f97316"/>
+      <stop offset=".55" stop-color="#123d76"/>
+      <stop offset="1" stop-color="#050812"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="28%" r="48%">
+      <stop offset="0" stop-color="#ffb020" stop-opacity=".72"/>
+      <stop offset=".55" stop-color="#ffb020" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#ffb020" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="900" fill="url(#bg)"/>
+  <rect width="1400" height="900" fill="url(#glow)"/>
+  <circle cx="700" cy="318" r="154" fill="#ffb020" opacity=".2"/>
+  <g transform="translate(585 142)">
+    <circle cx="115" cy="110" r="70" fill="#ffd9b5"/>
+    <path d="M42 286c22-66 62-98 120-98s98 32 120 98v138H42z" fill="#1d4ed8"/>
+    <path d="M42 286h240v54H42z" fill="#ec4899" opacity=".88"/>
+    <path d="M76 78c22-34 70-52 116-28 18 10 30 25 38 48-52-16-96-14-154-20z" fill="#18181b"/>
+    <path d="M118 190l44 58 44-58" fill="none" stroke="#ffb020" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="92" y="724" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="900">Vaibhav Sooryavanshi</text>
+  <text x="96" y="790" fill="#ffe0b2" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="800">2026 Orange Cap - 776 runs</text>
+</svg>

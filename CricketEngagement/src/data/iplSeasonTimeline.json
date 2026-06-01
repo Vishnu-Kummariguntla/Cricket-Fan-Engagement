@@ -289,18 +289,18 @@
   },
   {
     "year": 2026,
-    "champion": "Season in progress",
-    "runnerUp": "To be decided",
-    "venue": "To be decided",
-    "orangeCap": { "winner": "Live race", "runs": "TBD" },
-    "purpleCap": { "winner": "Live race", "wickets": "TBD" },
-    "playerOfTournament": "TBD",
-    "finalMvp": "TBD",
-    "finalScore": "2026 final pending",
-    "bestInnings": "To be added when the season closes.",
-    "bestBowling": "To be added when the season closes.",
-    "moments": ["Track the 2026 squads", "Watch the cap races", "Final card updates after the trophy match"],
-    "summary": "The 2026 stop is treated as a live-season preview so the page does not invent awards before the tournament is complete.",
-    "colors": ["#22d3ee", "#f7c948"]
+    "champion": "Royal Challengers Bengaluru",
+    "runnerUp": "Gujarat Titans",
+    "venue": "Narendra Modi Stadium, Ahmedabad",
+    "orangeCap": { "winner": "Vaibhav Sooryavanshi", "runs": 776 },
+    "purpleCap": { "winner": "Kagiso Rabada", "wickets": 29 },
+    "playerOfTournament": "Vaibhav Sooryavanshi",
+    "finalMvp": "Virat Kohli",
+    "finalScore": "RCB 156/5 beat GT 155/8 by 5 wickets",
+    "bestInnings": "Virat Kohli's unbeaten 75 in the final completed RCB's chase with 12 balls left.",
+    "bestBowling": "Kagiso Rabada finished the season on top of the wicket chart with 29 wickets.",
+    "moments": ["RCB defend the trophy", "Vaibhav Sooryavanshi wins MVP and Orange Cap", "Kagiso Rabada seals the Purple Cap"],
+    "summary": "RCB became back-to-back IPL champions, beating Gujarat Titans in Ahmedabad while Sooryavanshi and Rabada topped the season charts.",
+    "colors": ["#da1818", "#d4af37"]
   }
 ]
