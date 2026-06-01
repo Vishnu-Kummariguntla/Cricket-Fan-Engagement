@@ -1,18 +1,65 @@
 import { useEffect, useState } from 'react'
 import iplTeams from '../../data/iplTeams.json'
 import { useAuth } from './AuthProvider'
+import { getUserProfile, saveUserProfile } from './profileStore'
 import { listUserResults } from './savedResults'
 
+const teamLogoPaths = {
+  csk: '/images/logos/chennai-super-kings.svg',
+  dc: '/images/logos/delhi-capitals.svg',
+  gt: '/images/logos/gujarat-titans.svg',
+  kkr: '/images/logos/kolkata-knight-riders.svg',
+  lsg: '/images/logos/lucknow-super-giants.svg',
+  mi: '/images/logos/mumbai-indians.svg',
+  pbks: '/images/logos/punjab-kings.svg',
+  rr: '/images/logos/rajasthan-royals.png',
+  rcb: '/images/logos/royal-challengers-bengaluru.svg',
+  srh: '/images/logos/sunrisers-hyderabad.svg',
+}
+
+function getFriendlyProfileError(error) {
+  if (error?.code === 'permission-denied' || String(error?.message || '').toLowerCase().includes('permission')) {
+    return 'Firebase blocked this profile action. Deploy the latest Firestore rules so users can update their own profile and reserve usernames.'
+  }
+  return error?.message || 'Profile could not be saved.'
+}
+
 export default function ProfilePage() {
-  const { openAuthModal, user } = useAuth()
+  const { applyUserProfile, openAuthModal, user } = useAuth()
   const [username, setUsername] = useState('')
   const [favoriteFranchise, setFavoriteFranchise] = useState('rcb')
+  const [favoritePlayer, setFavoritePlayer] = useState('')
   const [results, setResults] = useState({ auction: [], dreamTeam: [], quiz: [], post: [] })
+  const [status, setStatus] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!user) return
-    setUsername(user.displayName || '')
-    listUserResults(user.uid).then(setResults)
+    let alive = true
+
+    getUserProfile(user)
+      .then((profile) => {
+        if (!alive) return
+        setUsername(profile?.username || user.displayName || '')
+        setFavoriteFranchise(profile?.favoriteFranchise || 'rcb')
+        setFavoritePlayer(profile?.favoritePlayer || '')
+      })
+      .catch((error) => {
+        if (!alive) return
+        setStatus(getFriendlyProfileError(error))
+      })
+
+    listUserResults(user.uid)
+      .then((savedResults) => {
+        if (alive) setResults(savedResults)
+      })
+      .catch((error) => {
+        console.warn('Unable to load saved results for profile preview', error)
+      })
+
+    return () => {
+      alive = false
+    }
   }, [user])
 
   if (!user) {
@@ -28,16 +75,42 @@ export default function ProfilePage() {
   }
 
   const publicItems = [...results.auction, ...results.dreamTeam, ...results.quiz, ...results.post].filter((item) => item.visibility === 'public')
+  const favoriteTeam = iplTeams.find((team) => team.id === favoriteFranchise) || iplTeams.find((team) => team.id === 'rcb')
+  const saveProfile = async (event) => {
+    event.preventDefault()
+    setSaving(true)
+    setStatus('')
+    try {
+      const savedProfile = await saveUserProfile(user, { username, favoriteFranchise, favoritePlayer })
+      applyUserProfile(savedProfile)
+      setUsername(savedProfile.username || username)
+      setStatus(savedProfile.warning || 'Profile saved.')
+    } catch (error) {
+      setStatus(getFriendlyProfileError(error))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <section className="hub-page profile-page">
-      <div className="hub-hero">
-        <span>Profile</span>
-        <h1>{username || user.displayName || 'Cricket Fan'}</h1>
-        <p>Private controls now, public fan identity when you share saved results.</p>
+    <section
+      className="hub-page profile-page"
+      style={{
+        '--profile-accent': favoriteTeam?.colors?.accent,
+        '--profile-secondary': favoriteTeam?.colors?.secondary,
+        '--profile-logo': `url(${teamLogoPaths[favoriteTeam?.id] || teamLogoPaths.rcb})`,
+      }}
+    >
+      <div className="hub-hero profile-hero">
+        <div>
+          <span>Profile</span>
+          <h1>{username || user.displayName || 'Cricket Fan'}</h1>
+          <p>Control your public cricket identity, favorite franchise, and favorite player.</p>
+        </div>
+        <img alt={`${favoriteTeam?.name} logo`} src={teamLogoPaths[favoriteTeam?.id] || teamLogoPaths.rcb} />
       </div>
       <div className="profile-grid">
-        <section className="profile-card">
+        <form className="profile-card" onSubmit={saveProfile}>
           <span>Private Profile Settings</span>
           <label>
             Username
@@ -49,12 +122,18 @@ export default function ProfilePage() {
               {iplTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
             </select>
           </label>
-          <p>Profile editing is staged locally here. Persisting profile metadata belongs in the users collection when Firebase config is connected.</p>
-        </section>
+          <label>
+            Favorite Player
+            <input onChange={(event) => setFavoritePlayer(event.target.value)} placeholder="Virat Kohli, MS Dhoni, Jasprit Bumrah..." value={favoritePlayer} />
+          </label>
+          <button disabled={saving} type="submit">{saving ? 'Saving...' : 'Save Profile'}</button>
+          {status && <p className={status.toLowerCase().includes('saved') ? 'profile-status success' : 'profile-status'}>{status}</p>}
+        </form>
         <section className="profile-card">
           <span>Public Preview</span>
           <strong>{username || user.displayName}</strong>
-          <p>Favorite franchise: {iplTeams.find((team) => team.id === favoriteFranchise)?.name}</p>
+          <p>Favorite franchise: {favoriteTeam?.name}</p>
+          <p>Favorite player: {favoritePlayer || 'Not selected yet'}</p>
           <p>{publicItems.length} public shared item{publicItems.length === 1 ? '' : 's'}</p>
         </section>
         <section className="profile-card fan-posts-foundation">

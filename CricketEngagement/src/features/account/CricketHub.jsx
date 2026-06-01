@@ -72,7 +72,7 @@ export default function CricketHub({ onNavigate }) {
     return (
       <section className="hub-page">
         <div className="hub-hero">
-          <span>My Cricket Hub</span>
+          <span>Saved Results</span>
           <h1>Sign in to save your cricket universe.</h1>
           <p>Auction results, Dream Teams, quiz outcomes, favorites, and fan posts will live here.</p>
           <button onClick={() => openAuthModal('signIn')} type="button">Sign In</button>
@@ -84,7 +84,7 @@ export default function CricketHub({ onNavigate }) {
   return (
     <section className="hub-page">
       <div className="hub-hero">
-        <span>My Cricket Hub</span>
+        <span>Saved Results</span>
         <h1>{user.displayName || 'Cricket Fan'}'s saved results.</h1>
         <p>Control visibility for every item. Public saves generate shareable links.</p>
         <button onClick={() => onNavigate('profile')} type="button">Open Profile</button>

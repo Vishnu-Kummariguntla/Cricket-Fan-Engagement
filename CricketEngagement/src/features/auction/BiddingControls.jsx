@@ -45,7 +45,7 @@ export default function BiddingControls({
           <input min={currentBid + 0.2} onChange={(event) => setCustomBid(event.target.value)} step="0.1" type="number" value={customBid} />
         </label>
         <button disabled={disabled} onClick={onCustomBid} type="button">Submit</button>
-        <button disabled={!canEndAuction} onClick={onEndAuction} type="button">End Auction</button>
+        <button disabled={!canEndAuction} onClick={onEndAuction} type="button">Complete Auction</button>
       </div>
     </section>
   )

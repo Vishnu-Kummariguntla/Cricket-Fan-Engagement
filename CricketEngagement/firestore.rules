@@ -6,6 +6,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
     function ownsDocument() {
       return signedIn() && resource.data.userId == request.auth.uid;
     }
@@ -19,8 +23,33 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if signedIn() && request.auth.uid == userId;
-      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'email',
+          'username',
+          'usernameLower',
+          'displayName',
+          'photoURL',
+          'favoriteFranchise',
+          'favoritePlayer',
+          'updatedAt'
+        ]);
+    }
+
+    match /usernames/{username} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId', 'username', 'updatedAt'])
+        && !exists(/databases/$(database)/documents/usernames/$(username));
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId', 'username', 'updatedAt']);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /auctionResults/{id} {

@@ -60,6 +60,12 @@ export default function AuctionRoom({
   const player = players[playerIndex]
   const userTeam = teams.find((team) => team.id === userTeamId)
   const highestBidder = teams.find((team) => team.id === highestBidderId)
+  const ownedPlayerNames = new Set(userTeam.squad.map((squadPlayer) => squadPlayer.name))
+  const hasValidPlayingTwelve = (
+    squadLayout.starting.every((playerName) => playerName && ownedPlayerNames.has(playerName))
+    && Boolean(squadLayout.impact)
+    && ownedPlayerNames.has(squadLayout.impact)
+  )
   const auctionClosed = !player || userTeam.squad.length >= maxSquadSize || Boolean(saleBanner)
   const userIsHighestBidder = highestBidderId === userTeamId
   const userCanBid = !auctionClosed && !userPassed && !userIsHighestBidder
@@ -286,7 +292,7 @@ export default function AuctionRoom({
           <span>{userTeam.name}</span>
           <h1>Mega Auction Room</h1>
         </div>
-        <button disabled={userTeam.squad.length < maxSquadSize} onClick={onFinish} type="button">Finish Auction</button>
+        <button disabled={!hasValidPlayingTwelve} onClick={onFinish} type="button">Complete Auction</button>
       </div>
 
       <div className="auction-room-grid">
@@ -307,12 +313,12 @@ export default function AuctionRoom({
           </AnimatePresence>
 
           <BiddingControls
-            canEndAuction={userTeam.squad.length >= maxSquadSize}
+            canEndAuction={hasValidPlayingTwelve}
             currentBid={currentBid}
             customBid={customBid}
             canPass={!auctionClosed && !userPassed}
             disabled={!userCanBid}
-            helperText={userPassed ? 'You passed. Other franchises are bidding this player out.' : userIsHighestBidder ? 'Waiting for another franchise to beat your bid.' : botThinking ? 'Franchises are thinking, but you can jump in.' : 'You can bid now.'}
+            helperText={userPassed ? 'You passed. Other franchises are bidding this player out.' : userIsHighestBidder ? 'Waiting for another franchise to beat your bid.' : botThinking ? 'Franchises are thinking, but you can jump in.' : hasValidPlayingTwelve ? 'Your playing 12 is valid. You can complete the auction anytime.' : 'You can bid now.'}
             onAutoBid={autoBid}
             onBid={bidAsUser}
             onCustomBid={submitCustomBid}

@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   firebaseAuth,
   firebaseAuthApi,
+  firebaseConfigStatus,
+  firebaseDb,
+  firestoreApi,
   googleProvider,
   hasFirebaseConfig,
 } from './firebaseClient'
@@ -36,6 +39,32 @@ function normalizeUser(user) {
   }
 }
 
+async function upsertUserDocument(user) {
+  if (!hasFirebaseConfig || !firebaseDb || !user?.uid) return
+
+  const normalizedUser = normalizeUser(user)
+  await firestoreApi.setDoc(
+    firestoreApi.doc(firebaseDb, 'users', user.uid),
+    {
+      userId: user.uid,
+      email: normalizedUser.email || '',
+      username: normalizedUser.displayName,
+      displayName: normalizedUser.displayName,
+      photoURL: normalizedUser.photoURL,
+      updatedAt: firestoreApi.serverTimestamp(),
+    },
+    { merge: true },
+  )
+}
+
+async function syncUserDocument(user) {
+  try {
+    await upsertUserDocument(user)
+  } catch (error) {
+    console.warn('Unable to sync Firebase user profile', error)
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [authModalMode, setAuthModalMode] = useState(null)
@@ -49,6 +78,9 @@ export function AuthProvider({ children }) {
 
     return firebaseAuthApi.onAuthStateChanged(firebaseAuth, (nextUser) => {
       setUser(normalizeUser(nextUser))
+      if (nextUser) {
+        void syncUserDocument(nextUser)
+      }
     })
   }, [])
 
@@ -60,6 +92,7 @@ export function AuthProvider({ children }) {
   const signIn = async (email, password) => {
     if (hasFirebaseConfig && firebaseAuth) {
       const credential = await firebaseAuthApi.signInWithEmailAndPassword(firebaseAuth, email, password)
+      await syncUserDocument(credential.user)
       setUser(normalizeUser(credential.user))
       setAuthModalMode(null)
       return
@@ -77,7 +110,14 @@ export function AuthProvider({ children }) {
       if (displayName) {
         await firebaseAuthApi.updateProfile(credential.user, { displayName })
       }
-      setUser(normalizeUser({ ...credential.user, displayName: displayName || credential.user.displayName }))
+      const nextUser = {
+        uid: credential.user.uid,
+        email: credential.user.email,
+        displayName: displayName || credential.user.displayName,
+        photoURL: credential.user.photoURL,
+      }
+      await syncUserDocument(nextUser)
+      setUser(normalizeUser(nextUser))
       setAuthModalMode(null)
       return
     }
@@ -91,6 +131,7 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     if (hasFirebaseConfig && firebaseAuth && googleProvider) {
       const credential = await firebaseAuthApi.signInWithPopup(firebaseAuth, googleProvider)
+      await syncUserDocument(credential.user)
       setUser(normalizeUser(credential.user))
       setAuthModalMode(null)
       return
@@ -120,13 +161,28 @@ export function AuthProvider({ children }) {
   const saveUserResult = async (type, payload, visibility = 'private') => {
     if (!requireAuth()) return null
     const saved = await saveResult(type, user, payload, visibility)
-    showToast('Saved to My Cricket Hub.')
+    showToast('Saved to Saved Results.')
     return saved
+  }
+
+  const applyUserProfile = (profile) => {
+    setUser((current) => {
+      if (!current) return current
+      const nextUser = {
+        ...current,
+        displayName: profile.username || profile.displayName || current.displayName,
+        favoriteFranchise: profile.favoriteFranchise ?? current.favoriteFranchise,
+        favoritePlayer: profile.favoritePlayer ?? current.favoritePlayer,
+      }
+      if (!hasFirebaseConfig) setLocalUser(nextUser)
+      return nextUser
+    })
   }
 
   const value = useMemo(() => ({
     authModalMode,
     closeAuthModal: () => setAuthModalMode(null),
+    applyUserProfile,
     logOut,
     openAuthModal: (mode = 'signIn') => setAuthModalMode(mode),
     requireAuth,
@@ -136,6 +192,7 @@ export function AuthProvider({ children }) {
     signUp,
     toast,
     user,
+    firebaseConfigStatus,
     usingFirebase: hasFirebaseConfig,
   }), [authModalMode, toast, user])
 

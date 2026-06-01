@@ -1,9 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from './AuthProvider'
 
 function getAuthErrorMessage(error) {
   const code = error?.code || ''
+  const message = error?.message || ''
+
+  if (code === 'auth/invalid-api-key' || message.toLowerCase().includes('api key')) {
+    return 'Firebase is rejecting the API key. Check that the Vercel environment variables match your Firebase web app config, then redeploy.'
+  }
+
+  if (code === 'auth/network-request-failed') {
+    return 'Firebase could not be reached from this browser. Check your connection and try again.'
+  }
 
   if (code === 'auth/unauthorized-domain') {
     return 'This deployment domain is not authorized in Firebase. Add your Vercel domain in Firebase Authentication > Settings > Authorized domains.'
@@ -25,18 +34,24 @@ function getAuthErrorMessage(error) {
     return 'The Google sign-in popup was closed before sign-in finished.'
   }
 
-  return error?.message || 'Authentication failed.'
+  return message || 'Authentication failed.'
 }
 
 export default function AuthModal() {
-  const { authModalMode, closeAuthModal, signIn, signInWithGoogle, signUp } = useAuth()
+  const { authModalMode, closeAuthModal, firebaseConfigStatus, signIn, signInWithGoogle, signUp, usingFirebase } = useAuth()
   const [mode, setMode] = useState('signIn')
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (authModalMode === 'signIn' || authModalMode === 'signUp') {
+      setMode(authModalMode)
+    }
+  }, [authModalMode])
+
   if (!authModalMode) return null
 
-  const activeMode = authModalMode === 'required' ? mode : authModalMode
+  const activeMode = mode
   const isSignUp = activeMode === 'signUp'
   const title = authModalMode === 'required' ? 'Sign in to save your cricket results.' : isSignUp ? 'Create your cricket account.' : 'Sign in to your cricket account.'
 
@@ -74,8 +89,11 @@ export default function AuthModal() {
           <div className="auth-heading">
             <span>Cricket Account</span>
             <h2>{title}</h2>
-            <p>Save auctions, Dream Teams, quiz results, favorites, and future fan posts in one matchday hub.</p>
+            <p>Save auctions, Dream Teams, quiz results, favorites, and future fan posts with your profile.</p>
           </div>
+          <p className={`auth-status ${usingFirebase ? 'live' : 'local'}`}>
+            {usingFirebase ? 'Firebase connected' : firebaseConfigStatus}
+          </p>
           {isSignUp && (
             <label>
               Username
@@ -96,9 +114,9 @@ export default function AuthModal() {
             <button onClick={continueWithGoogle} type="button">Continue with Google</button>
           </div>
           <div className="auth-switcher">
-            <button className={activeMode === 'signIn' ? 'active' : ''} onClick={() => setMode('signIn')} type="button">Sign In</button>
-            <button className={activeMode === 'signUp' ? 'active' : ''} onClick={() => setMode('signUp')} type="button">Create Account</button>
-            <button onClick={closeAuthModal} type="button">Continue Without Saving</button>
+            <button onClick={() => setMode(isSignUp ? 'signIn' : 'signUp')} type="button">
+              {isSignUp ? 'Already have an account? Sign In' : 'New here? Create Account'}
+            </button>
           </div>
         </motion.form>
       </motion.div>

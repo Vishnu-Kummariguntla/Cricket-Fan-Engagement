@@ -13,6 +13,7 @@ import {
   addDoc,
   collection,
   doc,
+  deleteDoc,
   getDoc,
   getDocs,
   getFirestore,
@@ -34,7 +35,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-export const hasFirebaseConfig = Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId)
+const missingFirebaseFields = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key)
+const hasValidApiKeyShape = /^AIza[0-9A-Za-z_-]{35}$/.test(firebaseConfig.apiKey || '')
+
+export const firebaseConfigStatus = missingFirebaseFields.length
+  ? `Missing Firebase env values: ${missingFirebaseFields.join(', ')}.`
+  : hasValidApiKeyShape
+    ? 'Firebase connected'
+    : 'Firebase API key looks incomplete or invalid. Copy the full apiKey from Firebase Project settings > SDK setup and restart Vite.'
+
+export const hasFirebaseConfig = Boolean(!missingFirebaseFields.length && hasValidApiKeyShape)
 
 export const firebaseApp = hasFirebaseConfig ? initializeApp(firebaseConfig) : null
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null
@@ -54,6 +66,7 @@ export const firestoreApi = {
   addDoc,
   collection,
   doc,
+  deleteDoc,
   getDoc,
   getDocs,
   limit,

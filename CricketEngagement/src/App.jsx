@@ -1794,8 +1794,8 @@ function App() {
       return 'visualizations'
     }
 
-    if (typeof window !== 'undefined' && window.location.pathname === '/hub') {
-      return 'hub'
+    if (typeof window !== 'undefined' && ['/hub', '/saved-results'].includes(window.location.pathname)) {
+      return 'saved'
     }
 
     if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
@@ -1823,8 +1823,8 @@ function App() {
               ? '/auction'
               : view === 'visualizations'
                 ? `/visualizations${playerQuery}`
-                : view === 'hub'
-                  ? '/hub'
+                : view === 'saved'
+                  ? '/saved-results'
                   : view === 'profile'
                     ? '/profile'
                     : '/'
@@ -1848,8 +1848,8 @@ function App() {
                 ? 'auction'
                 : window.location.pathname === '/visualizations'
                   ? 'visualizations'
-                  : window.location.pathname === '/hub'
-                    ? 'hub'
+                  : ['/hub', '/saved-results'].includes(window.location.pathname)
+                    ? 'saved'
                     : window.location.pathname === '/profile'
                       ? 'profile'
                       : window.location.pathname.startsWith('/share/')
@@ -1971,7 +1971,7 @@ function App() {
         <AuctionSimulator cricketerProfiles={cricketerProfiles} featuredAnimations={featuredAnimations} iplTeams={iplTeams} onNavigate={changeView} />
       ) : activeView === 'fan' ? (
         <FanPersonalityTest onNavigate={changeView} />
-      ) : activeView === 'hub' ? (
+      ) : activeView === 'saved' ? (
         <CricketHub onNavigate={changeView} />
       ) : activeView === 'profile' ? (
         <ProfilePage />

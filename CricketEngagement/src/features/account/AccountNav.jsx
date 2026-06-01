@@ -23,15 +23,14 @@ export default function AccountNav({ activeView, onNavigate }) {
 
   return (
     <div className="account-menu">
-      <button className={`account-avatar-button${activeView === 'hub' || activeView === 'profile' ? ' active' : ''}`} onClick={() => setOpen((current) => !current)} type="button">
+      <button className={`account-avatar-button${activeView === 'saved' || activeView === 'profile' ? ' active' : ''}`} onClick={() => setOpen((current) => !current)} type="button">
         <span>{initials}</span>
         <strong>{user.displayName || 'Profile'}</strong>
       </button>
       {open && (
         <div className="account-dropdown">
-          <button onClick={() => { onNavigate('hub'); setOpen(false) }} type="button">My Cricket Hub</button>
           <button onClick={() => { onNavigate('profile'); setOpen(false) }} type="button">Profile</button>
-          <button onClick={() => { onNavigate('hub'); setOpen(false) }} type="button">Saved Results</button>
+          <button onClick={() => { onNavigate('saved'); setOpen(false) }} type="button">Saved Results</button>
           <button className="account-logout-button" onClick={() => { logOut(); setOpen(false) }} type="button">Log Out</button>
         </div>
       )}
