@@ -33,6 +33,7 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
   const [usernameStatus, setUsernameStatus] = useState({ state: 'idle', message: '' })
+  const [savedUsername, setSavedUsername] = useState('')
 
   useEffect(() => {
     if (!user) return
@@ -41,7 +42,9 @@ export default function ProfilePage() {
     getUserProfile(user)
       .then((profile) => {
         if (!alive) return
-        setUsername(profile?.username || user.displayName || '')
+        const loadedUsername = profile?.username || user.displayName || ''
+        setUsername(loadedUsername)
+        setSavedUsername(loadedUsername)
         setFavoriteFranchise(profile?.favoriteFranchise || 'rcb')
         setFavoritePlayer(profile?.favoritePlayer || '')
       })
@@ -64,7 +67,15 @@ export default function ProfilePage() {
   }, [user])
 
   useEffect(() => {
-    if (!user || !username.trim()) {
+    const normalizedUsername = username.trim().replace(/\s+/g, ' ')
+    const normalizedSavedUsername = savedUsername.trim().replace(/\s+/g, ' ')
+
+    if (!user || !normalizedUsername) {
+      setUsernameStatus({ state: 'idle', message: '' })
+      return undefined
+    }
+
+    if (normalizedSavedUsername && normalizedUsername.toLowerCase() === normalizedSavedUsername.toLowerCase()) {
       setUsernameStatus({ state: 'idle', message: '' })
       return undefined
     }
@@ -87,7 +98,7 @@ export default function ProfilePage() {
       alive = false
       window.clearTimeout(timer)
     }
-  }, [user, username])
+  }, [savedUsername, user, username])
 
   if (!user) {
     return (
@@ -108,11 +119,16 @@ export default function ProfilePage() {
     setSaving(true)
     setStatus('')
     try {
-      const availability = await checkUsernameAvailability(user, username)
-      if (!availability.available) throw new Error(availability.message)
+      const normalizedUsername = username.trim().replace(/\s+/g, ' ')
+      const normalizedSavedUsername = savedUsername.trim().replace(/\s+/g, ' ')
+      if (!normalizedSavedUsername || normalizedUsername.toLowerCase() !== normalizedSavedUsername.toLowerCase()) {
+        const availability = await checkUsernameAvailability(user, username)
+        if (!availability.available) throw new Error(availability.message)
+      }
       const savedProfile = await saveUserProfile(user, { username, favoriteFranchise, favoritePlayer })
       applyUserProfile(savedProfile)
       setUsername(savedProfile.username || username)
+      setSavedUsername(savedProfile.username || username)
       setStatus(savedProfile.warning || 'Profile saved.')
     } catch (error) {
       setStatus(getFriendlyProfileError(error))

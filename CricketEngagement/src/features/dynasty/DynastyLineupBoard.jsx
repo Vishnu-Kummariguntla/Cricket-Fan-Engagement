@@ -8,6 +8,12 @@ function getPlayerInitials(name) {
     .slice(0, 2)
 }
 
+function getCompactPlayerName(name) {
+  const parts = name.split(' ').filter(Boolean)
+  if (name.length <= 14 || parts.length < 2) return name
+  return `${parts[0][0]} ${parts.at(-1)}`
+}
+
 export default function DynastyLineupBoard({
   lineupNames,
   selectedCardName,
@@ -38,7 +44,7 @@ export default function DynastyLineupBoard({
               <span>{String(index + 1).padStart(2, '0')}</span>
               <div>
                 {player && <em>{getPlayerInitials(player.name)}</em>}
-                <strong>{player?.name ?? 'Assign'}</strong>
+                <strong title={player?.name}>{player ? getCompactPlayerName(player.name) : 'Assign'}</strong>
                 {player && <small>{player.teams.join(' · ')} · {player.championships}x titles</small>}
               </div>
             </button>
@@ -57,7 +63,7 @@ export default function DynastyLineupBoard({
         <span>Impact Substitute</span>
         <div>
           {impactPlayer && <em>{getPlayerInitials(impactPlayer.name)}</em>}
-          <strong>{impactPlayer?.name ?? 'Assign Impact Substitute'}</strong>
+          <strong title={impactPlayer?.name}>{impactPlayer ? getCompactPlayerName(impactPlayer.name) : 'Assign Impact Substitute'}</strong>
           {impactPlayer && <small>{impactPlayer.teams.join(' · ')} · {impactPlayer.championships}x titles</small>}
         </div>
       </div>

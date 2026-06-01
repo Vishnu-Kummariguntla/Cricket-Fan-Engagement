@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import iplTeams from '../../data/iplTeams.json'
 import { useAuth } from './AuthProvider'
 
 export default function AccountNav({ activeView, onNavigate }) {
@@ -20,9 +21,16 @@ export default function AccountNav({ activeView, onNavigate }) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
+  const favoriteTeam = iplTeams.find((team) => team.id === user.favoriteFranchise)
 
   return (
-    <div className="account-menu">
+    <div
+      className="account-menu"
+      style={{
+        '--account-team-accent': favoriteTeam?.colors?.accent || '#f7c948',
+        '--account-team-secondary': favoriteTeam?.colors?.secondary || '#22d3ee',
+      }}
+    >
       <button className={`account-avatar-button${activeView === 'saved' || activeView === 'profile' ? ' active' : ''}`} onClick={() => setOpen((current) => !current)} type="button">
         <span>{initials}</span>
         <strong>{user.displayName || 'Profile'}</strong>

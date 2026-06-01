@@ -132,16 +132,36 @@ export default function IplDynastyBuilder() {
     URL.revokeObjectURL(url)
   }
 
-  const saveDreamTeam = () => {
-    saveUserResult('dreamTeam', {
-      selectedPlayers: selectedPlayers.map((player) => player.name),
-      startingXI: startingXi.map((player) => player.name),
-      impactSubstitute: impactPlayer?.name ?? '',
-      dynastyScore: dynastyStats.dynastyScore,
-      teamIdentity: dynastyStats.identity,
-      chemistryBonuses: dynastyStats.chemistry.map((bonus) => bonus.name),
-      totals: dynastyStats.totals,
+  const saveDreamTeam = async () => {
+    setShareStatus('')
+    const serializePlayer = (player) => ({
+      name: player.name,
+      roles: player.roles,
+      teams: player.teams,
+      runs: player.runs,
+      wickets: player.wickets,
+      championships: player.championships,
+      awards: player.awards,
+      overseas: player.overseas,
     })
+
+    try {
+      await saveUserResult('dreamTeam', {
+        selectedPlayers: selectedPlayers.map((player) => player.name),
+        selectedPlayerDetails: selectedPlayers.map(serializePlayer),
+        startingXI: startingXi.map((player) => player.name),
+        startingXIDetails: startingXi.map(serializePlayer),
+        impactSubstitute: impactPlayer?.name ?? '',
+        impactSubstituteDetails: impactPlayer ? serializePlayer(impactPlayer) : null,
+        dynastyScore: dynastyStats.dynastyScore,
+        teamIdentity: dynastyStats.identity,
+        chemistryBonuses: dynastyStats.chemistry.map((bonus) => bonus.name),
+        totals: dynastyStats.totals,
+      })
+      setShareStatus('Saved')
+    } catch (error) {
+      setShareStatus(error?.code === 'permission-denied' ? 'Firestore blocked save' : 'Save failed')
+    }
   }
 
   return (

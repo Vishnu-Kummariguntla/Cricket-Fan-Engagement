@@ -79,14 +79,21 @@ export async function listUserResults(userId) {
   if (hasFirebaseConfig && firebaseDb) {
     const entries = await Promise.all(
       Object.entries(collectionNames).map(async ([type, name]) => {
-        const q = firestoreApi.query(
-          firestoreApi.collection(firebaseDb, name),
-          firestoreApi.where('userId', '==', userId),
-          firestoreApi.orderBy('createdAt', 'desc'),
-          firestoreApi.limit(30),
-        )
-        const snap = await firestoreApi.getDocs(q)
-        return [type, snap.docs.map(normalizeDoc)]
+        try {
+          const q = firestoreApi.query(
+            firestoreApi.collection(firebaseDb, name),
+            firestoreApi.where('userId', '==', userId),
+            firestoreApi.limit(30),
+          )
+          const snap = await firestoreApi.getDocs(q)
+          const items = snap.docs
+            .map(normalizeDoc)
+            .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+          return [type, items]
+        } catch (error) {
+          console.warn(`Unable to load ${name}`, error)
+          return [type, []]
+        }
       }),
     )
     return Object.fromEntries(entries)

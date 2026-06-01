@@ -162,9 +162,14 @@ export function AuthProvider({ children }) {
 
   const saveUserResult = async (type, payload, visibility = 'private') => {
     if (!requireAuth()) return null
-    const saved = await saveResult(type, user, payload, visibility)
-    showToast('Saved to Saved Results.')
-    return saved
+    try {
+      const saved = await saveResult(type, user, payload, visibility)
+      showToast('Saved to Saved Results.')
+      return saved
+    } catch (error) {
+      showToast(error?.code === 'permission-denied' ? 'Firestore blocked this save. Check published rules.' : 'Save failed.')
+      throw error
+    }
   }
 
   const applyUserProfile = (profile) => {

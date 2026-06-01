@@ -1545,15 +1545,21 @@ function FanPersonalityTest({ onNavigate }) {
       setShareStatus('Ready to copy')
     }
   }
-  const saveQuizResult = () => {
-    saveUserResult('quiz', {
-      resultPlayer: winner.name,
-      traitScores: Object.fromEntries(resultStats.map((stat) => [stat.label, stat.value])),
-      bestTeamMatch: teamMatch.team.name,
-      similarPlayers: runnersUp.map((player) => player.name),
-      match: winner.match,
-      archetype: winner.archetype,
-    })
+  const saveQuizResult = async () => {
+    setShareStatus('')
+    try {
+      await saveUserResult('quiz', {
+        resultPlayer: winner.name,
+        traitScores: Object.fromEntries(resultStats.map((stat) => [stat.label, stat.value])),
+        bestTeamMatch: teamMatch.team.name,
+        similarPlayers: runnersUp.map((player) => player.name),
+        match: winner.match,
+        archetype: winner.archetype,
+      })
+      setShareStatus('Saved')
+    } catch (error) {
+      setShareStatus(error?.code === 'permission-denied' ? 'Firestore blocked save' : 'Save failed')
+    }
   }
 
   return (
