@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../account/AuthProvider'
+import SaveResultControls from '../account/SaveResultControls'
 import { analyzeAuction, formatCrores } from './auctionEngine'
 
 function PlayerLine({ player }) {
@@ -8,32 +8,27 @@ function PlayerLine({ player }) {
 }
 
 export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
-  const { saveUserResult } = useAuth()
   const [saveStatus, setSaveStatus] = useState('')
   const analysis = analyzeAuction(userTeam, squadLayout)
   const playerMap = new Map(userTeam.squad.map((player) => [player.name, player]))
   const startingPlayers = squadLayout.starting.map((name) => playerMap.get(name)).filter(Boolean)
   const benchPlayers = squadLayout.bench.map((name) => playerMap.get(name)).filter(Boolean)
   const impactPlayer = playerMap.get(squadLayout.impact)
-  const saveAuctionResult = async () => {
-    setSaveStatus('')
-    try {
-      await saveUserResult('auction', {
-        userFranchise: userTeam.name,
-        finalSquad: userTeam.squad.map((player) => ({ name: player.name, role: player.roleLabel, soldPrice: player.soldPrice })),
-        startingXI: startingPlayers.map((player) => player.name),
-        impactSubstitute: impactPlayer?.name ?? '',
-        purseRemaining: formatCrores(userTeam.purse),
-        mostExpensiveBuy: analysis.mostExpensiveBuy?.name ?? '',
-        bestValueBuy: analysis.bestValueBuy?.name ?? '',
-        grade: analysis.grade,
-        squadRating: analysis.squadRating,
-        chemistry: analysis.chemistry,
-      })
-      setSaveStatus('Auction saved to Firestore.')
-    } catch (error) {
-      setSaveStatus(error?.code === 'permission-denied' ? 'Firestore blocked this auction save. Publish the latest rules.' : 'Auction save failed.')
-    }
+  const getAuctionSavePayload = () => ({
+    userFranchise: userTeam.name,
+    finalSquad: userTeam.squad.map((player) => ({ name: player.name, role: player.roleLabel, soldPrice: player.soldPrice })),
+    startingXI: startingPlayers.map((player) => player.name),
+    impactSubstitute: impactPlayer?.name ?? '',
+    purseRemaining: formatCrores(userTeam.purse),
+    mostExpensiveBuy: analysis.mostExpensiveBuy?.name ?? '',
+    bestValueBuy: analysis.bestValueBuy?.name ?? '',
+    grade: analysis.grade,
+    squadRating: analysis.squadRating,
+    chemistry: analysis.chemistry,
+  })
+
+  const markSaved = () => {
+    setSaveStatus('Auction saved. Open My Cricket Hub anytime to revisit it.')
   }
 
   return (
@@ -42,8 +37,8 @@ export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
         <span>Post-Auction Analysis</span>
         <h1>{userTeam.shortName} Auction Grade: {analysis.grade}</h1>
         <p>{analysis.scoutReport}</p>
+        <SaveResultControls buttonLabel="Save Auction Result" getPayload={getAuctionSavePayload} onSaved={markSaved} type="auction" />
         <div className="results-action-row">
-          <button onClick={saveAuctionResult} type="button">Save Auction Result</button>
           <button onClick={onRestart} type="button">Run Another Auction</button>
         </div>
         {saveStatus && <p className="save-result-status">{saveStatus}</p>}

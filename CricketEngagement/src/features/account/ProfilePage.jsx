@@ -25,10 +25,10 @@ function getFriendlyProfileError(error) {
 }
 
 export default function ProfilePage() {
-  const { applyUserProfile, openAuthModal, user } = useAuth()
-  const [username, setUsername] = useState('')
-  const [favoriteFranchise, setFavoriteFranchise] = useState('rcb')
-  const [favoritePlayer, setFavoritePlayer] = useState('')
+  const { applyUserProfile, authLoading, openAuthModal, user } = useAuth()
+  const [username, setUsername] = useState(user?.displayName || '')
+  const [favoriteFranchise, setFavoriteFranchise] = useState(user?.favoriteFranchise || 'rcb')
+  const [favoritePlayer, setFavoritePlayer] = useState(user?.favoritePlayer || '')
   const [results, setResults] = useState({ auction: [], dreamTeam: [], quiz: [], post: [] })
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
@@ -38,15 +38,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return
     let alive = true
+    const hydratedUsername = user.displayName || ''
+
+    setUsername(hydratedUsername)
+    setSavedUsername(hydratedUsername)
+    setFavoriteFranchise(user.favoriteFranchise || 'rcb')
+    setFavoritePlayer(user.favoritePlayer || '')
 
     getUserProfile(user)
       .then((profile) => {
         if (!alive) return
-        const loadedUsername = profile?.username || user.displayName || ''
+        const loadedUsername = profile?.username || hydratedUsername
         setUsername(loadedUsername)
         setSavedUsername(loadedUsername)
-        setFavoriteFranchise(profile?.favoriteFranchise || 'rcb')
-        setFavoritePlayer(profile?.favoritePlayer || '')
+        setFavoriteFranchise(profile?.favoriteFranchise || user.favoriteFranchise || 'rcb')
+        setFavoritePlayer(profile?.favoritePlayer || user.favoritePlayer || '')
       })
       .catch((error) => {
         if (!alive) return
@@ -99,6 +105,17 @@ export default function ProfilePage() {
       window.clearTimeout(timer)
     }
   }, [savedUsername, user, username])
+
+  if (authLoading) {
+    return (
+      <section className="hub-page">
+        <div className="hub-hero">
+          <span>Profile</span>
+          <h1>Loading your cricket profile...</h1>
+        </div>
+      </section>
+    )
+  }
 
   if (!user) {
     return (

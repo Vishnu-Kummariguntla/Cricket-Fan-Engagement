@@ -3,8 +3,16 @@ import iplTeams from '../../data/iplTeams.json'
 import { useAuth } from './AuthProvider'
 
 export default function AccountNav({ activeView, onNavigate }) {
-  const { logOut, openAuthModal, user } = useAuth()
+  const { authLoading, logOut, openAuthModal, user } = useAuth()
   const [open, setOpen] = useState(false)
+
+  if (authLoading) {
+    return (
+      <button className="account-signin-button" disabled type="button">
+        Profile
+      </button>
+    )
+  }
 
   if (!user) {
     return (
@@ -38,7 +46,6 @@ export default function AccountNav({ activeView, onNavigate }) {
       {open && (
         <div className="account-dropdown">
           <button onClick={() => { onNavigate('profile'); setOpen(false) }} type="button">Profile</button>
-          <button onClick={() => { onNavigate('saved'); setOpen(false) }} type="button">Saved Results</button>
           <button className="account-logout-button" onClick={() => { logOut(); setOpen(false) }} type="button">Log Out</button>
         </div>
       )}

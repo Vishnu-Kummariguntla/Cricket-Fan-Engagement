@@ -88,6 +88,7 @@ export default function DynastyPlayerGrid({
                 <small>{player.teams.join(' · ')}</small>
               </div>
               <div className="dynasty-card-badges">
+                {player.current2026Team && <span>2026 {player.current2026Team}</span>}
                 {player.championships > 0 && <span>{player.championships}x IPL</span>}
                 {player.wicketkeeper && <span>WK</span>}
                 <span>{getDynastyPlayerScore(player)} DS</span>

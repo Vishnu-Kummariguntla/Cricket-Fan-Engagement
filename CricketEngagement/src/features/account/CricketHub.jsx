@@ -176,9 +176,9 @@ export default function CricketHub({ onNavigate }) {
     return (
       <section className="hub-page">
         <div className="hub-hero">
-          <span>Saved Results</span>
-          <h1>Sign in to save your cricket universe.</h1>
-          <p>Auction results, Dream Teams, quiz outcomes, favorites, and fan posts will live here.</p>
+          <span>My Cricket Hub</span>
+          <h1>Save your cricket creations and come back later.</h1>
+          <p>Quiz results, Dream Teams, auction squads, public links, and future fan posts all live in one dashboard.</p>
           <button onClick={() => openAuthModal('signIn')} type="button">Sign In</button>
         </div>
       </section>
@@ -188,9 +188,9 @@ export default function CricketHub({ onNavigate }) {
   return (
     <section className="hub-page">
       <div className="hub-hero">
-        <span>Saved Results</span>
-        <h1>{user.displayName || 'Cricket Fan'}'s saved results.</h1>
-        <p>Control visibility for every item. Public saves generate shareable links.</p>
+        <span>My Cricket Hub</span>
+        <h1>{user.displayName || 'Cricket Fan'}'s cricket dashboard.</h1>
+        <p>Create results across the site, save them here, and decide what stays private or becomes shareable.</p>
         <button onClick={() => onNavigate('profile')} type="button">Open Profile</button>
         {loadStatus && <p className="save-result-status">{loadStatus}</p>}
       </div>

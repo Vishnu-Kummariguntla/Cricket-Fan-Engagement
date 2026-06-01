@@ -22,6 +22,7 @@ import { AuthProvider, useAuth } from './features/account/AuthProvider'
 import CricketHub from './features/account/CricketHub'
 import ProfilePage from './features/account/ProfilePage'
 import SharePage from './features/account/SharePage'
+import SaveResultControls from './features/account/SaveResultControls'
 
 const players = featuredPlayers
 
@@ -1510,7 +1511,6 @@ function ResultPortrait({ player }) {
 }
 
 function FanPersonalityTest({ onNavigate }) {
-  const { saveUserResult } = useAuth()
   const [answers, setAnswers] = useState({})
   const [showResult, setShowResult] = useState(false)
   const [shareStatus, setShareStatus] = useState('')
@@ -1545,22 +1545,14 @@ function FanPersonalityTest({ onNavigate }) {
       setShareStatus('Ready to copy')
     }
   }
-  const saveQuizResult = async () => {
-    setShareStatus('')
-    try {
-      await saveUserResult('quiz', {
-        resultPlayer: winner.name,
-        traitScores: Object.fromEntries(resultStats.map((stat) => [stat.label, stat.value])),
-        bestTeamMatch: teamMatch.team.name,
-        similarPlayers: runnersUp.map((player) => player.name),
-        match: winner.match,
-        archetype: winner.archetype,
-      })
-      setShareStatus('Saved')
-    } catch (error) {
-      setShareStatus(error?.code === 'permission-denied' ? 'Firestore blocked save' : 'Save failed')
-    }
-  }
+  const getQuizSavePayload = () => ({
+    resultPlayer: winner.name,
+    traitScores: Object.fromEntries(resultStats.map((stat) => [stat.label, stat.value])),
+    bestTeamMatch: teamMatch.team.name,
+    similarPlayers: runnersUp.map((player) => player.name),
+    match: winner.match,
+    archetype: winner.archetype,
+  })
 
   return (
     <section className="fan-stage pointer-reactive" aria-label="Cricketer personality test">
@@ -1703,9 +1695,7 @@ function FanPersonalityTest({ onNavigate }) {
                   <button onClick={shareResult} type="button">
                     {shareStatus || 'Share Result'}
                   </button>
-                  <button onClick={saveQuizResult} type="button">
-                    Save Quiz Result
-                  </button>
+                  <SaveResultControls buttonLabel="Save Quiz Result" getPayload={getQuizSavePayload} type="quiz" />
                 </div>
               </>
             ) : (
@@ -1774,7 +1764,7 @@ function FanPersonalityTest({ onNavigate }) {
 }
 
 function App() {
-  const { toast } = useAuth()
+  const { authLoading, toast, user } = useAuth()
   const backdropRef = useRef(null)
   const pointerTargetRef = useRef(null)
   const pendingPointerRef = useRef(null)
@@ -1816,6 +1806,15 @@ function App() {
   }
   const [activeView, setActiveView] = useState(getInitialView)
   const frame = usePlayback()
+  const favoriteTeam = useMemo(() => (
+    !authLoading && user?.favoriteFranchise
+      ? iplTeams.find((team) => team.id === user.favoriteFranchise)
+      : null
+  ), [authLoading, user?.favoriteFranchise])
+  const navStyle = favoriteTeam ? {
+    '--nav-team-accent': favoriteTeam.colors.accent,
+    '--nav-team-secondary': favoriteTeam.colors.secondary,
+  } : undefined
   const changeView = (view, options = {}) => {
     const playerQuery = options.player ? `?player=${getPlayerSlug(options.player)}` : ''
     const path =
@@ -1830,7 +1829,7 @@ function App() {
               : view === 'visualizations'
                 ? `/visualizations${playerQuery}`
                 : view === 'saved'
-                  ? '/saved-results'
+                  ? '/hub'
                   : view === 'profile'
                     ? '/profile'
                     : '/'
@@ -1921,7 +1920,7 @@ function App() {
       }}
     >
       <div className="interactive-backdrop" ref={backdropRef} aria-hidden="true" />
-      <nav className="player-switch" aria-label="Primary navigation">
+      <nav className={`player-switch${authLoading ? ' auth-loading' : ''}`} style={navStyle} aria-label="Primary navigation">
         <button
           className={`home-nav-button${activeView === 'home' ? ' active' : ''}`}
           onClick={() => changeView('home')}
@@ -1963,6 +1962,13 @@ function App() {
           type="button"
         >
           Fan Test
+        </button>
+        <button
+          className={activeView === 'saved' ? 'active hub-nav-button' : 'hub-nav-button'}
+          onClick={() => changeView('saved')}
+          type="button"
+        >
+          My Cricket Hub
         </button>
         <AccountNav activeView={activeView} onNavigate={changeView} />
       </nav>

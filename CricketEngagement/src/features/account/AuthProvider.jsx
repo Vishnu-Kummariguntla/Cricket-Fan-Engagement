@@ -44,22 +44,44 @@ function normalizeUser(user) {
   }
 }
 
+function mergeUserProfile(baseUser, profile) {
+  if (!baseUser) return null
+  if (!profile) return baseUser
+
+  return {
+    ...baseUser,
+    displayName: profile.username || profile.displayName || baseUser.displayName,
+    favoriteFranchise: profile.favoriteFranchise || '',
+    favoritePlayer: profile.favoritePlayer || '',
+  }
+}
+
 async function upsertUserDocument(user) {
   if (!hasFirebaseConfig || !firebaseDb || !user?.uid) return
 
   const normalizedUser = normalizeUser(user)
-  await firestoreApi.setDoc(
-    firestoreApi.doc(firebaseDb, 'users', user.uid),
-    {
-      userId: user.uid,
-      email: normalizedUser.email || '',
-      username: normalizedUser.displayName,
-      displayName: normalizedUser.displayName,
-      photoURL: normalizedUser.photoURL,
-      updatedAt: firestoreApi.serverTimestamp(),
-    },
-    { merge: true },
-  )
+  const userRef = firestoreApi.doc(firebaseDb, 'users', user.uid)
+  let existingProfile = null
+
+  try {
+    const profileSnapshot = await firestoreApi.getDoc(userRef)
+    existingProfile = profileSnapshot.exists() ? profileSnapshot.data() : null
+  } catch {
+    existingProfile = null
+  }
+
+  const profileUpdate = {
+    userId: user.uid,
+    email: normalizedUser.email || '',
+    photoURL: normalizedUser.photoURL,
+    updatedAt: firestoreApi.serverTimestamp(),
+  }
+
+  if (!existingProfile?.username) profileUpdate.username = normalizedUser.displayName
+  if (!existingProfile?.displayName) profileUpdate.displayName = normalizedUser.displayName
+  if (!existingProfile?.createdAt) profileUpdate.createdAt = firestoreApi.serverTimestamp()
+
+  await firestoreApi.setDoc(userRef, profileUpdate, { merge: true })
 }
 
 async function syncUserDocument(user) {
@@ -70,23 +92,57 @@ async function syncUserDocument(user) {
   }
 }
 
+async function getProfiledUser(user) {
+  const normalizedUser = normalizeUser(user)
+  if (!normalizedUser || !hasFirebaseConfig || !firebaseDb || !user?.uid) return normalizedUser
+
+  try {
+    const profileSnapshot = await firestoreApi.getDoc(firestoreApi.doc(firebaseDb, 'users', user.uid))
+    return mergeUserProfile(normalizedUser, profileSnapshot.exists() ? profileSnapshot.data() : null)
+  } catch (error) {
+    console.warn('Unable to load Firebase user profile', error)
+    return normalizedUser
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [authModalMode, setAuthModalMode] = useState(null)
   const [toast, setToast] = useState('')
 
   useEffect(() => {
     if (!hasFirebaseConfig || !firebaseAuth) {
       setUser(getLocalUser())
+      setAuthLoading(false)
       return undefined
     }
 
-    return firebaseAuthApi.onAuthStateChanged(firebaseAuth, (nextUser) => {
-      setUser(normalizeUser(nextUser))
-      if (nextUser) {
-        void syncUserDocument(nextUser)
-      }
+    let active = true
+    const unsubscribe = firebaseAuthApi.onAuthStateChanged(firebaseAuth, (nextUser) => {
+      setAuthLoading(true)
+      void (async () => {
+        if (!nextUser) {
+          if (active) {
+            setUser(null)
+            setAuthLoading(false)
+          }
+          return
+        }
+
+        await syncUserDocument(nextUser)
+        const profiledUser = await getProfiledUser(nextUser)
+        if (active) {
+          setUser(profiledUser)
+          setAuthLoading(false)
+        }
+      })()
     })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
   }, [])
 
   const showToast = (message) => {
@@ -98,7 +154,7 @@ export function AuthProvider({ children }) {
     if (hasFirebaseConfig && firebaseAuth) {
       const credential = await firebaseAuthApi.signInWithEmailAndPassword(firebaseAuth, email, password)
       await syncUserDocument(credential.user)
-      setUser(normalizeUser(credential.user))
+      setUser(await getProfiledUser(credential.user))
       setAuthModalMode(null)
       return
     }
@@ -122,7 +178,7 @@ export function AuthProvider({ children }) {
         photoURL: credential.user.photoURL,
       }
       await syncUserDocument(nextUser)
-      setUser(normalizeUser(nextUser))
+      setUser(await getProfiledUser(nextUser))
       setAuthModalMode(null)
       return
     }
@@ -137,7 +193,7 @@ export function AuthProvider({ children }) {
     if (hasFirebaseConfig && firebaseAuth && googleProvider) {
       const credential = await firebaseAuthApi.signInWithPopup(firebaseAuth, googleProvider)
       await syncUserDocument(credential.user)
-      setUser(normalizeUser(credential.user))
+      setUser(await getProfiledUser(credential.user))
       setAuthModalMode(null)
       return
     }
@@ -151,6 +207,7 @@ export function AuthProvider({ children }) {
     }
     setLocalUser(null)
     setUser(null)
+    setAuthLoading(false)
     showToast('Logged out.')
   }
 
@@ -164,7 +221,7 @@ export function AuthProvider({ children }) {
     if (!requireAuth()) return null
     try {
       const saved = await saveResult(type, user, payload, visibility)
-      showToast('Saved to Saved Results.')
+      showToast('Saved to My Cricket Hub.')
       return saved
     } catch (error) {
       showToast(error?.code === 'permission-denied' ? 'Firestore blocked this save. Check published rules.' : 'Save failed.')
@@ -199,9 +256,10 @@ export function AuthProvider({ children }) {
     signUp,
     toast,
     user,
+    authLoading,
     firebaseConfigStatus,
     usingFirebase: hasFirebaseConfig,
-  }), [authModalMode, toast, user])
+  }), [authLoading, authModalMode, toast, user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

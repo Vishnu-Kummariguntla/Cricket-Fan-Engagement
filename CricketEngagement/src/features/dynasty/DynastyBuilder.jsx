@@ -8,10 +8,9 @@ import {
   getDynastyPlayerScore,
   getDynastyStats,
 } from './dynastyScoring'
-import { useAuth } from '../account/AuthProvider'
+import SaveResultControls from '../account/SaveResultControls'
 
 export default function IplDynastyBuilder() {
-  const { saveUserResult } = useAuth()
   const [lineupNames, setLineupNames] = useState(Array(12).fill(''))
   const [selectedCardName, setSelectedCardName] = useState('')
   const [query, setQuery] = useState('')
@@ -132,8 +131,7 @@ export default function IplDynastyBuilder() {
     URL.revokeObjectURL(url)
   }
 
-  const saveDreamTeam = async () => {
-    setShareStatus('')
+  const getDreamTeamSavePayload = () => {
     const serializePlayer = (player) => ({
       name: player.name,
       roles: player.roles,
@@ -145,22 +143,17 @@ export default function IplDynastyBuilder() {
       overseas: player.overseas,
     })
 
-    try {
-      await saveUserResult('dreamTeam', {
-        selectedPlayers: selectedPlayers.map((player) => player.name),
-        selectedPlayerDetails: selectedPlayers.map(serializePlayer),
-        startingXI: startingXi.map((player) => player.name),
-        startingXIDetails: startingXi.map(serializePlayer),
-        impactSubstitute: impactPlayer?.name ?? '',
-        impactSubstituteDetails: impactPlayer ? serializePlayer(impactPlayer) : null,
-        dynastyScore: dynastyStats.dynastyScore,
-        teamIdentity: dynastyStats.identity,
-        chemistryBonuses: dynastyStats.chemistry.map((bonus) => bonus.name),
-        totals: dynastyStats.totals,
-      })
-      setShareStatus('Saved')
-    } catch (error) {
-      setShareStatus(error?.code === 'permission-denied' ? 'Firestore blocked save' : 'Save failed')
+    return {
+      selectedPlayers: selectedPlayers.map((player) => player.name),
+      selectedPlayerDetails: selectedPlayers.map(serializePlayer),
+      startingXI: startingXi.map((player) => player.name),
+      startingXIDetails: startingXi.map(serializePlayer),
+      impactSubstitute: impactPlayer?.name ?? '',
+      impactSubstituteDetails: impactPlayer ? serializePlayer(impactPlayer) : null,
+      dynastyScore: dynastyStats.dynastyScore,
+      teamIdentity: dynastyStats.identity,
+      chemistryBonuses: dynastyStats.chemistry.map((bonus) => bonus.name),
+      totals: dynastyStats.totals,
     }
   }
 
@@ -272,8 +265,8 @@ export default function IplDynastyBuilder() {
             <strong>{dynastyStats.dynastyScore}</strong>
             <p>{dynastyStats.identity}</p>
             <small>{dynastyStats.chemistry.length} chemistry bonuses · {dynastyStats.totals.titles} championships represented</small>
+            <SaveResultControls buttonLabel="Save Dream Team" getPayload={getDreamTeamSavePayload} type="dreamTeam" />
             <div>
-              <button onClick={saveDreamTeam} type="button">Save Dream Team</button>
               <button onClick={shareDynasty} type="button">{shareStatus || 'Share Result'}</button>
               <button onClick={downloadDynastyCard} type="button">Download Card</button>
             </div>

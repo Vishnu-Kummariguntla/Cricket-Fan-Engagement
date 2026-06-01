@@ -1,3 +1,6 @@
+import iplTeams from '../../data/iplTeams.json'
+import iplSeasonTimeline from '../../data/iplSeasonTimeline.json'
+
 const dynastyPlayers = [
   { name: 'MS Dhoni', nationality: 'India', overseas: false, teams: ['CSK', 'RPS'], roles: ['Wicketkeeper', 'Finisher', 'Captain'], wicketkeeper: true, runs: 5243, wickets: 0, strikeRate: 137.5, economy: null, championships: 5, awards: 8, leadership: 99, legacy: 99, accent: '#f7c948' },
   { name: 'Virat Kohli', nationality: 'India', overseas: false, teams: ['RCB'], roles: ['Batter', 'Captain'], wicketkeeper: false, runs: 8661, wickets: 4, strikeRate: 132.9, economy: 8.8, championships: 1, awards: 13, leadership: 92, legacy: 99, accent: '#da1818' },
@@ -149,4 +152,147 @@ const dynastySupplementalPlayers = [
   accent,
 }))
 
-export const dynastyPlayerPool = [...dynastyPlayers, ...dynastySupplementalPlayers]
+const champion2026 = iplSeasonTimeline.find((season) => season.year === 2026)?.champion
+const season2026 = iplSeasonTimeline.find((season) => season.year === 2026)
+const champion2026Team = iplTeams.find((team) => team.name === champion2026)
+const rosterEntries = iplTeams.flatMap((team) => team.players.map(([name, nationality, role]) => ({ name, nationality, role, team })))
+const recentRosterTitleCounts = iplSeasonTimeline
+  .filter((season) => season.year >= 2025)
+  .reduce((counts, season) => {
+    const championTeam = iplTeams.find((team) => team.name === season.champion)
+    if (!championTeam) return counts
+    counts[championTeam.shortName] = (counts[championTeam.shortName] ?? 0) + 1
+    return counts
+  }, {})
+const season2026Boosts = [
+  season2026?.orangeCap?.winner && [season2026.orangeCap.winner, { runs: season2026.orangeCap.runs, awards: 1 }],
+  season2026?.purpleCap?.winner && [season2026.purpleCap.winner, { wickets: season2026.purpleCap.wickets, awards: 1 }],
+  season2026?.playerOfTournament && [season2026.playerOfTournament, { awards: 1, legacy: 2 }],
+  season2026?.finalMvp && [season2026.finalMvp, { awards: 1, legacy: 2 }],
+].filter(Boolean).reduce((boosts, [name, boost]) => {
+  boosts[name] = {
+    runs: (boosts[name]?.runs ?? 0) + (boost.runs ?? 0),
+    wickets: (boosts[name]?.wickets ?? 0) + (boost.wickets ?? 0),
+    awards: (boosts[name]?.awards ?? 0) + (boost.awards ?? 0),
+    legacy: (boosts[name]?.legacy ?? 0) + (boost.legacy ?? 0),
+  }
+  return boosts
+}, {})
+
+function getRosterRoles(role) {
+  if (role === 'keeper') return ['Wicketkeeper', 'Batter']
+  if (role === 'allrounder') return ['All-rounder']
+  if (role === 'bowler') return ['Fast bowler']
+  return ['Batter']
+}
+
+function getBaselineStats(role, team) {
+  const recentRosterTitles = recentRosterTitleCounts[team.shortName] ?? 0
+
+  if (role === 'bowler') {
+    return {
+      runs: 35,
+      wickets: 18,
+      strikeRate: 92,
+      economy: 8.4,
+      championships: recentRosterTitles,
+      awards: 1,
+      leadership: 58,
+      legacy: 63,
+    }
+  }
+
+  if (role === 'allrounder') {
+    return {
+      runs: 260,
+      wickets: 10,
+      strikeRate: 128,
+      economy: 8.6,
+      championships: recentRosterTitles,
+      awards: 2,
+      leadership: 62,
+      legacy: 66,
+    }
+  }
+
+  return {
+    runs: role === 'keeper' ? 340 : 380,
+    wickets: 0,
+    strikeRate: role === 'keeper' ? 132 : 134,
+    economy: null,
+    championships: recentRosterTitles,
+    awards: 2,
+    leadership: role === 'keeper' ? 64 : 62,
+    legacy: role === 'keeper' ? 67 : 66,
+  }
+}
+
+function createRosterPlayer({ name, nationality, role, team }) {
+  return applySeason2026Boosts({
+    name,
+    nationality,
+    overseas: nationality !== 'India',
+    teams: [team.shortName],
+    roles: getRosterRoles(role),
+    wicketkeeper: role === 'keeper',
+    ...getBaselineStats(role, team),
+    accent: team.colors.accent,
+    current2026Team: team.shortName,
+    roster2026: true,
+  })
+}
+
+function mergeUnique(left = [], right = []) {
+  return Array.from(new Set([...left, ...right]))
+}
+
+function applyRosterContext(player, entry) {
+  const won2026Title = entry.team.shortName === champion2026Team?.shortName
+  const recentRosterTitles = recentRosterTitleCounts[entry.team.shortName] ?? 0
+  const championships = won2026Title ? Math.max(player.championships + 1, recentRosterTitles) : player.championships
+
+  return applySeason2026Boosts({
+    ...player,
+    teams: mergeUnique(player.teams, [entry.team.shortName]),
+    roles: mergeUnique(player.roles, getRosterRoles(entry.role)),
+    wicketkeeper: player.wicketkeeper || entry.role === 'keeper',
+    championships,
+    accent: entry.team.colors.accent || player.accent,
+    current2026Team: entry.team.shortName,
+    roster2026: true,
+  })
+}
+
+function applySeason2026Boosts(player) {
+  const boost = season2026Boosts[player.name]
+  if (!boost) return player
+
+  return {
+    ...player,
+    runs: player.runs + boost.runs,
+    wickets: player.wickets + boost.wickets,
+    awards: player.awards + boost.awards,
+    legacy: Math.min(99, player.legacy + boost.legacy),
+  }
+}
+
+function mergePlayerPool() {
+  const poolByName = new Map()
+  const basePlayers = [...dynastyPlayers, ...dynastySupplementalPlayers]
+
+  basePlayers.forEach((player) => {
+    poolByName.set(player.name, player)
+  })
+
+  rosterEntries.forEach((entry) => {
+    const existingPlayer = poolByName.get(entry.name)
+    poolByName.set(entry.name, existingPlayer ? applyRosterContext(existingPlayer, entry) : createRosterPlayer(entry))
+  })
+
+  return Array.from(poolByName.values()).sort((left, right) => {
+    if (left.roster2026 !== right.roster2026) return left.roster2026 ? -1 : 1
+    return left.name.localeCompare(right.name)
+  })
+}
+
+export const dynastyPlayerPool = mergePlayerPool()

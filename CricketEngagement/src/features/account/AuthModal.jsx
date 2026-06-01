@@ -42,7 +42,7 @@ function getAuthErrorMessage(error) {
 }
 
 export default function AuthModal() {
-  const { authModalMode, closeAuthModal, firebaseConfigStatus, signIn, signInWithGoogle, signUp, usingFirebase } = useAuth()
+  const { authModalMode, closeAuthModal, signIn, signInWithGoogle, signUp } = useAuth()
   const [mode, setMode] = useState('signIn')
   const [form, setForm] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
@@ -57,7 +57,7 @@ export default function AuthModal() {
 
   const activeMode = mode
   const isSignUp = activeMode === 'signUp'
-  const title = authModalMode === 'required' ? 'Sign in to save your cricket results.' : isSignUp ? 'Create your cricket account.' : 'Sign in to your cricket account.'
+  const title = authModalMode === 'required' ? 'Sign in to save this result.' : isSignUp ? 'Create your cricket account.' : 'Sign in to your cricket account.'
 
   const submit = async (event) => {
     event.preventDefault()
@@ -93,11 +93,8 @@ export default function AuthModal() {
           <div className="auth-heading">
             <span>Cricket Account</span>
             <h2>{title}</h2>
-            <p>Save auctions, Dream Teams, quiz results, favorites, and future fan posts with your profile.</p>
+            <p>Create quizzes, Dream Teams, and auction squads, then save them to My Cricket Hub with private or public sharing.</p>
           </div>
-          <p className={`auth-status ${usingFirebase ? 'live' : 'local'}`}>
-            {usingFirebase ? 'Firebase connected' : firebaseConfigStatus}
-          </p>
           {isSignUp && (
             <label>
               Username
