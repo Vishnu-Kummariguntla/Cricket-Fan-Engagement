@@ -22,6 +22,10 @@ function getAuthErrorMessage(error) {
     return 'This sign-in provider is not enabled in Firebase Authentication. Enable Email/Password or Google in the Firebase console.'
   }
 
+  if (message.includes('Google sign-in requires Firebase configuration')) {
+    return message
+  }
+
   if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
     return 'The email or password is incorrect, or this account has not been created yet.'
   }

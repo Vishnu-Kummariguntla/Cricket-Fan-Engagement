@@ -15,7 +15,12 @@ const localUserKey = 'cricket-fan-engagement.localUser'
 
 function getLocalUser() {
   try {
-    return JSON.parse(window.localStorage.getItem(localUserKey) || 'null')
+    const savedUser = JSON.parse(window.localStorage.getItem(localUserKey) || 'null')
+    if (savedUser?.uid === 'local-google-cricket-fan') {
+      setLocalUser(null)
+      return null
+    }
+    return savedUser
   } catch {
     return null
   }
@@ -137,10 +142,7 @@ export function AuthProvider({ children }) {
       return
     }
 
-    const localUser = { uid: 'local-google-cricket-fan', email: 'google-user@local.dev', displayName: 'Google Cricket Fan', photoURL: '' }
-    setLocalUser(localUser)
-    setUser(localUser)
-    setAuthModalMode(null)
+    throw new Error(`${firebaseConfigStatus} Google sign-in requires Firebase configuration and cannot use a local placeholder account.`)
   }
 
   const logOut = async () => {
