@@ -24,9 +24,22 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId)
+      allow create: if isOwner(userId)
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasOnly([
+          'userId',
+          'email',
+          'username',
+          'usernameLower',
+          'displayName',
+          'photoURL',
+          'favoriteFranchise',
+          'favoritePlayer',
+          'updatedAt'
+        ]);
+      allow update: if isOwner(userId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'userId',
           'email',
           'username',

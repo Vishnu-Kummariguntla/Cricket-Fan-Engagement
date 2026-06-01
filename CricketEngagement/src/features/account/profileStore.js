@@ -126,7 +126,11 @@ export async function saveUserProfile(user, profile) {
         })
 
         if (previousUsernameLower && previousUsernameLower !== usernameLower) {
-          await firestoreApi.deleteDoc(firestoreApi.doc(firebaseDb, 'usernames', previousUsernameLower))
+          const previousUsernameRef = firestoreApi.doc(firebaseDb, 'usernames', previousUsernameLower)
+          const previousUsernameSnap = await firestoreApi.getDoc(previousUsernameRef)
+          if (previousUsernameSnap.exists() && previousUsernameSnap.data().userId === user.uid) {
+            await firestoreApi.deleteDoc(previousUsernameRef)
+          }
         }
 
         usernameReserved = true
