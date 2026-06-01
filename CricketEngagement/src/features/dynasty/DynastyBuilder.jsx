@@ -8,8 +8,10 @@ import {
   getDynastyPlayerScore,
   getDynastyStats,
 } from './dynastyScoring'
+import { useAuth } from '../account/AuthProvider'
 
 export default function IplDynastyBuilder() {
+  const { saveUserResult } = useAuth()
   const [lineupNames, setLineupNames] = useState(Array(12).fill(''))
   const [selectedCardName, setSelectedCardName] = useState('')
   const [query, setQuery] = useState('')
@@ -130,6 +132,18 @@ export default function IplDynastyBuilder() {
     URL.revokeObjectURL(url)
   }
 
+  const saveDreamTeam = () => {
+    saveUserResult('dreamTeam', {
+      selectedPlayers: selectedPlayers.map((player) => player.name),
+      startingXI: startingXi.map((player) => player.name),
+      impactSubstitute: impactPlayer?.name ?? '',
+      dynastyScore: dynastyStats.dynastyScore,
+      teamIdentity: dynastyStats.identity,
+      chemistryBonuses: dynastyStats.chemistry.map((bonus) => bonus.name),
+      totals: dynastyStats.totals,
+    })
+  }
+
   return (
     <section className="dynasty-page pointer-reactive" aria-label="IPL Dream Team Builder">
       <div className="dynasty-hero">
@@ -239,6 +253,7 @@ export default function IplDynastyBuilder() {
             <p>{dynastyStats.identity}</p>
             <small>{dynastyStats.chemistry.length} chemistry bonuses · {dynastyStats.totals.titles} championships represented</small>
             <div>
+              <button onClick={saveDreamTeam} type="button">Save Dream Team</button>
               <button onClick={shareDynasty} type="button">{shareStatus || 'Share Result'}</button>
               <button onClick={downloadDynastyCard} type="button">Download Card</button>
             </div>

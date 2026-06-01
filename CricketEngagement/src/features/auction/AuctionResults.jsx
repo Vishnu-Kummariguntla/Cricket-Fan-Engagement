@@ -1,4 +1,5 @@
 import { analyzeAuction, formatCrores } from './auctionEngine'
+import { useAuth } from '../account/AuthProvider'
 
 function PlayerLine({ player }) {
   if (!player) return <span>To be determined</span>
@@ -6,11 +7,26 @@ function PlayerLine({ player }) {
 }
 
 export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
+  const { saveUserResult } = useAuth()
   const analysis = analyzeAuction(userTeam, squadLayout)
   const playerMap = new Map(userTeam.squad.map((player) => [player.name, player]))
   const startingPlayers = squadLayout.starting.map((name) => playerMap.get(name)).filter(Boolean)
   const benchPlayers = squadLayout.bench.map((name) => playerMap.get(name)).filter(Boolean)
   const impactPlayer = playerMap.get(squadLayout.impact)
+  const saveAuctionResult = () => {
+    saveUserResult('auction', {
+      userFranchise: userTeam.name,
+      finalSquad: userTeam.squad.map((player) => ({ name: player.name, role: player.roleLabel, soldPrice: player.soldPrice })),
+      startingXI: startingPlayers.map((player) => player.name),
+      impactSubstitute: impactPlayer?.name ?? '',
+      purseRemaining: formatCrores(userTeam.purse),
+      mostExpensiveBuy: analysis.mostExpensiveBuy?.name ?? '',
+      bestValueBuy: analysis.bestValueBuy?.name ?? '',
+      grade: analysis.grade,
+      squadRating: analysis.squadRating,
+      chemistry: analysis.chemistry,
+    })
+  }
 
   return (
     <section className="auction-page auction-results-page" style={{ '--auction-accent': userTeam.colors.accent, '--auction-secondary': userTeam.colors.secondary }}>
@@ -18,7 +34,10 @@ export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
         <span>Post-Auction Analysis</span>
         <h1>{userTeam.shortName} Auction Grade: {analysis.grade}</h1>
         <p>{analysis.scoutReport}</p>
-        <button onClick={onRestart} type="button">Run Another Auction</button>
+        <div className="results-action-row">
+          <button onClick={saveAuctionResult} type="button">Save Auction Result</button>
+          <button onClick={onRestart} type="button">Run Another Auction</button>
+        </div>
       </div>
 
       <div className="auction-results-grid">
@@ -63,4 +82,3 @@ export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
     </section>
   )
 }
-

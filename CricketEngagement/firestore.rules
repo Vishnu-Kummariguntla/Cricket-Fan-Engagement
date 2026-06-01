@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsDocument() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownsIncomingDocument() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function publicOrOwner() {
+      return resource.data.visibility == 'public' || ownsDocument();
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /auctionResults/{id} {
+      allow read: if publicOrOwner();
+      allow create: if ownsIncomingDocument();
+      allow update, delete: if ownsDocument();
+    }
+
+    match /dreamTeams/{id} {
+      allow read: if publicOrOwner();
+      allow create: if ownsIncomingDocument();
+      allow update, delete: if ownsDocument();
+    }
+
+    match /quizResults/{id} {
+      allow read: if publicOrOwner();
+      allow create: if ownsIncomingDocument();
+      allow update, delete: if ownsDocument();
+    }
+
+    match /fanPosts/{id} {
+      allow read: if publicOrOwner();
+      allow create: if ownsIncomingDocument();
+      allow update, delete: if ownsDocument();
+    }
+
+    match /favorites/{id} {
+      allow read: if ownsDocument();
+      allow create: if ownsIncomingDocument();
+      allow update, delete: if ownsDocument();
+    }
+  }
+}

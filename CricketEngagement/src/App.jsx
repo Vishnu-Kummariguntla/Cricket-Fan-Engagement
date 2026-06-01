@@ -16,6 +16,12 @@ import internationalCareerTimelinesData from './data/internationalCareerTimeline
 import heroImage from './assets/hero.png'
 import IplDynastyBuilder from './features/dynasty/DynastyBuilder'
 import AuctionSimulator from './features/auction/AuctionSimulator'
+import AccountNav from './features/account/AccountNav'
+import AuthModal from './features/account/AuthModal'
+import { AuthProvider, useAuth } from './features/account/AuthProvider'
+import CricketHub from './features/account/CricketHub'
+import ProfilePage from './features/account/ProfilePage'
+import SharePage from './features/account/SharePage'
 
 const players = featuredPlayers
 
@@ -1504,6 +1510,7 @@ function ResultPortrait({ player }) {
 }
 
 function FanPersonalityTest({ onNavigate }) {
+  const { saveUserResult } = useAuth()
   const [answers, setAnswers] = useState({})
   const [showResult, setShowResult] = useState(false)
   const [shareStatus, setShareStatus] = useState('')
@@ -1537,6 +1544,16 @@ function FanPersonalityTest({ onNavigate }) {
     } catch {
       setShareStatus('Ready to copy')
     }
+  }
+  const saveQuizResult = () => {
+    saveUserResult('quiz', {
+      resultPlayer: winner.name,
+      traitScores: Object.fromEntries(resultStats.map((stat) => [stat.label, stat.value])),
+      bestTeamMatch: teamMatch.team.name,
+      similarPlayers: runnersUp.map((player) => player.name),
+      match: winner.match,
+      archetype: winner.archetype,
+    })
   }
 
   return (
@@ -1680,6 +1697,9 @@ function FanPersonalityTest({ onNavigate }) {
                   <button onClick={shareResult} type="button">
                     {shareStatus || 'Share Result'}
                   </button>
+                  <button onClick={saveQuizResult} type="button">
+                    Save Quiz Result
+                  </button>
                 </div>
               </>
             ) : (
@@ -1748,6 +1768,7 @@ function FanPersonalityTest({ onNavigate }) {
 }
 
 function App() {
+  const { toast } = useAuth()
   const backdropRef = useRef(null)
   const pointerTargetRef = useRef(null)
   const pendingPointerRef = useRef(null)
@@ -1773,6 +1794,18 @@ function App() {
       return 'visualizations'
     }
 
+    if (typeof window !== 'undefined' && window.location.pathname === '/hub') {
+      return 'hub'
+    }
+
+    if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
+      return 'profile'
+    }
+
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
+      return 'share'
+    }
+
     return 'home'
   }
   const [activeView, setActiveView] = useState(getInitialView)
@@ -1790,7 +1823,11 @@ function App() {
               ? '/auction'
               : view === 'visualizations'
                 ? `/visualizations${playerQuery}`
-                : '/'
+                : view === 'hub'
+                  ? '/hub'
+                  : view === 'profile'
+                    ? '/profile'
+                    : '/'
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', path)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1811,7 +1848,13 @@ function App() {
                 ? 'auction'
                 : window.location.pathname === '/visualizations'
                   ? 'visualizations'
-                  : 'home',
+                  : window.location.pathname === '/hub'
+                    ? 'hub'
+                    : window.location.pathname === '/profile'
+                      ? 'profile'
+                      : window.location.pathname.startsWith('/share/')
+                        ? 'share'
+                        : 'home',
       )
     }
 
@@ -1915,6 +1958,7 @@ function App() {
         >
           Fan Test
         </button>
+        <AccountNav activeView={activeView} onNavigate={changeView} />
       </nav>
 
       {activeView === 'home' ? (
@@ -1927,9 +1971,17 @@ function App() {
         <AuctionSimulator cricketerProfiles={cricketerProfiles} featuredAnimations={featuredAnimations} iplTeams={iplTeams} onNavigate={changeView} />
       ) : activeView === 'fan' ? (
         <FanPersonalityTest onNavigate={changeView} />
+      ) : activeView === 'hub' ? (
+        <CricketHub onNavigate={changeView} />
+      ) : activeView === 'profile' ? (
+        <ProfilePage />
+      ) : activeView === 'share' ? (
+        <SharePage />
       ) : (
         <VisualizationsPage frame={frame} />
       )}
+      <AuthModal />
+      {toast && <div className="save-toast">{toast}</div>}
     </main>
   )
 }
@@ -1939,7 +1991,9 @@ export default App
 export function RootApp() {
   return (
     <AppErrorBoundary>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </AppErrorBoundary>
   )
 }
