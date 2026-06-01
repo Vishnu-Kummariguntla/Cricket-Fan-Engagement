@@ -5,7 +5,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/fan-test",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

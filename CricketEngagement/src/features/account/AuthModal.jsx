@@ -2,6 +2,32 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from './AuthProvider'
 
+function getAuthErrorMessage(error) {
+  const code = error?.code || ''
+
+  if (code === 'auth/unauthorized-domain') {
+    return 'This deployment domain is not authorized in Firebase. Add your Vercel domain in Firebase Authentication > Settings > Authorized domains.'
+  }
+
+  if (code === 'auth/operation-not-allowed') {
+    return 'This sign-in provider is not enabled in Firebase Authentication. Enable Email/Password or Google in the Firebase console.'
+  }
+
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+    return 'The email or password is incorrect, or this account has not been created yet.'
+  }
+
+  if (code === 'auth/email-already-in-use') {
+    return 'An account already exists for this email. Try signing in instead.'
+  }
+
+  if (code === 'auth/popup-closed-by-user') {
+    return 'The Google sign-in popup was closed before sign-in finished.'
+  }
+
+  return error?.message || 'Authentication failed.'
+}
+
 export default function AuthModal() {
   const { authModalMode, closeAuthModal, signIn, signInWithGoogle, signUp } = useAuth()
   const [mode, setMode] = useState('signIn')
@@ -24,7 +50,16 @@ export default function AuthModal() {
         await signIn(form.email, form.password)
       }
     } catch (nextError) {
-      setError(nextError.message || 'Authentication failed.')
+      setError(getAuthErrorMessage(nextError))
+    }
+  }
+
+  const continueWithGoogle = async () => {
+    setError('')
+    try {
+      await signInWithGoogle()
+    } catch (nextError) {
+      setError(getAuthErrorMessage(nextError))
     }
   }
 
@@ -58,7 +93,7 @@ export default function AuthModal() {
           {error && <p className="auth-error">{error}</p>}
           <div className="auth-actions">
             <button type="submit">{isSignUp ? 'Create Account' : 'Sign In'}</button>
-            <button onClick={signInWithGoogle} type="button">Continue with Google</button>
+            <button onClick={continueWithGoogle} type="button">Continue with Google</button>
           </div>
           <div className="auth-switcher">
             <button className={activeMode === 'signIn' ? 'active' : ''} onClick={() => setMode('signIn')} type="button">Sign In</button>
