@@ -75,22 +75,11 @@ export async function checkUsernameAvailability(user, username) {
       if (usernameSnap.exists() && usernameSnap.data().userId !== user.uid) {
         return { available: false, message: 'That username is already taken. Choose another one.' }
       }
-
-      const usersQuery = firestoreApi.query(
-        firestoreApi.collection(firebaseDb, 'users'),
-        firestoreApi.where('usernameLower', '==', normalizedUsernameLower),
-        firestoreApi.limit(1),
-      )
-      const usersSnap = await firestoreApi.getDocs(usersQuery)
-      const duplicateUser = usersSnap.docs.find((docSnap) => docSnap.id !== user.uid)
-      if (duplicateUser) {
-        return { available: false, message: 'That username is already taken. Choose another one.' }
-      }
     } catch (error) {
       if (!isPermissionError(error)) throw error
       return {
         available: false,
-        message: 'Username availability cannot be verified until Firestore rules are deployed.',
+        message: 'Username availability cannot be verified. Publish Firestore rules that allow signed-in reads of username reservations.',
       }
     }
   }
