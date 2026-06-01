@@ -2270,6 +2270,25 @@ html {
   background: rgba(34, 197, 94, 0.08);
 }
 
+.username-status {
+  margin: -4px 0 0;
+  color: #cbd6f4;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.username-status.available {
+  color: #bbf7d0;
+}
+
+.username-status.taken {
+  color: #fecdd3;
+}
+
+.username-status.checking {
+  color: #fde68a;
+}
+
 .share-card {
   max-width: 960px;
   margin: 0 auto;

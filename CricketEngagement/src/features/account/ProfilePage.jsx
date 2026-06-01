@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import iplTeams from '../../data/iplTeams.json'
 import { useAuth } from './AuthProvider'
-import { getUserProfile, saveUserProfile } from './profileStore'
+import { checkUsernameAvailability, getUserProfile, saveUserProfile } from './profileStore'
 import { listUserResults } from './savedResults'
 
 const teamLogoPaths = {
@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [results, setResults] = useState({ auction: [], dreamTeam: [], quiz: [], post: [] })
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
+  const [usernameStatus, setUsernameStatus] = useState({ state: 'idle', message: '' })
 
   useEffect(() => {
     if (!user) return
@@ -62,6 +63,32 @@ export default function ProfilePage() {
     }
   }, [user])
 
+  useEffect(() => {
+    if (!user || !username.trim()) {
+      setUsernameStatus({ state: 'idle', message: '' })
+      return undefined
+    }
+
+    let alive = true
+    setUsernameStatus({ state: 'checking', message: 'Checking username...' })
+    const timer = window.setTimeout(() => {
+      checkUsernameAvailability(user, username)
+        .then((result) => {
+          if (!alive) return
+          setUsernameStatus({ state: result.available ? 'available' : 'taken', message: result.message })
+        })
+        .catch((error) => {
+          if (!alive) return
+          setUsernameStatus({ state: 'taken', message: getFriendlyProfileError(error) })
+        })
+    }, 300)
+
+    return () => {
+      alive = false
+      window.clearTimeout(timer)
+    }
+  }, [user, username])
+
   if (!user) {
     return (
       <section className="hub-page">
@@ -81,6 +108,8 @@ export default function ProfilePage() {
     setSaving(true)
     setStatus('')
     try {
+      const availability = await checkUsernameAvailability(user, username)
+      if (!availability.available) throw new Error(availability.message)
       const savedProfile = await saveUserProfile(user, { username, favoriteFranchise, favoritePlayer })
       applyUserProfile(savedProfile)
       setUsername(savedProfile.username || username)
@@ -116,6 +145,9 @@ export default function ProfilePage() {
             Username
             <input onChange={(event) => setUsername(event.target.value)} value={username} />
           </label>
+          {usernameStatus.message && (
+            <p className={`username-status ${usernameStatus.state}`}>{usernameStatus.message}</p>
+          )}
           <label>
             Favorite Franchise
             <select onChange={(event) => setFavoriteFranchise(event.target.value)} value={favoriteFranchise}>
@@ -126,7 +158,7 @@ export default function ProfilePage() {
             Favorite Player
             <input onChange={(event) => setFavoritePlayer(event.target.value)} placeholder="Virat Kohli, MS Dhoni, Jasprit Bumrah..." value={favoritePlayer} />
           </label>
-          <button disabled={saving} type="submit">{saving ? 'Saving...' : 'Save Profile'}</button>
+          <button disabled={saving || usernameStatus.state === 'checking' || usernameStatus.state === 'taken'} type="submit">{saving ? 'Saving...' : 'Save Profile'}</button>
           {status && <p className={status.toLowerCase().includes('saved') ? 'profile-status success' : 'profile-status'}>{status}</p>}
         </form>
         <section className="profile-card">

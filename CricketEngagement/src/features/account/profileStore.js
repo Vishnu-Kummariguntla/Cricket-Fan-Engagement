@@ -52,6 +52,52 @@ function saveLocalProfile(user, nextProfile, usernameLower) {
   return localProfiles[user.uid]
 }
 
+export async function checkUsernameAvailability(user, username) {
+  if (!user?.uid) return { available: false, message: 'You must be signed in to edit your username.' }
+
+  const normalizedUsername = normalizeUsername(username)
+  const normalizedUsernameLower = usernameKey(normalizedUsername)
+  if (normalizedUsername.length < 3) {
+    return { available: false, message: 'Username must be at least 3 characters.' }
+  }
+
+  const localProfiles = readLocalProfiles()
+  const localDuplicate = Object.entries(localProfiles).find(([userId, savedProfile]) => (
+    userId !== user.uid && usernameKey(savedProfile.username || '') === normalizedUsernameLower
+  ))
+  if (localDuplicate) {
+    return { available: false, message: 'That username is already taken. Choose another one.' }
+  }
+
+  if (hasFirebaseConfig && firebaseDb) {
+    try {
+      const usernameSnap = await firestoreApi.getDoc(firestoreApi.doc(firebaseDb, 'usernames', normalizedUsernameLower))
+      if (usernameSnap.exists() && usernameSnap.data().userId !== user.uid) {
+        return { available: false, message: 'That username is already taken. Choose another one.' }
+      }
+
+      const usersQuery = firestoreApi.query(
+        firestoreApi.collection(firebaseDb, 'users'),
+        firestoreApi.where('usernameLower', '==', normalizedUsernameLower),
+        firestoreApi.limit(1),
+      )
+      const usersSnap = await firestoreApi.getDocs(usersQuery)
+      const duplicateUser = usersSnap.docs.find((docSnap) => docSnap.id !== user.uid)
+      if (duplicateUser) {
+        return { available: false, message: 'That username is already taken. Choose another one.' }
+      }
+    } catch (error) {
+      if (!isPermissionError(error)) throw error
+      return {
+        available: false,
+        message: 'Username availability cannot be verified until Firestore rules are deployed.',
+      }
+    }
+  }
+
+  return { available: true, message: 'Username is available.' }
+}
+
 export async function getUserProfile(user) {
   if (!user?.uid) return null
 
@@ -112,12 +158,10 @@ export async function saveUserProfile(user, profile) {
 
     if (usernameChanged) {
       try {
-        const usernameRef = firestoreApi.doc(firebaseDb, 'usernames', usernameLower)
-        const usernameSnap = await firestoreApi.getDoc(usernameRef)
+        const availability = await checkUsernameAvailability(user, username)
+        if (!availability.available) throw new Error(availability.message)
 
-        if (usernameSnap.exists() && usernameSnap.data().userId !== user.uid) {
-          throw new Error('That username is already taken. Choose another one.')
-        }
+        const usernameRef = firestoreApi.doc(firebaseDb, 'usernames', usernameLower)
 
         await firestoreApi.setDoc(usernameRef, {
           userId: user.uid,
