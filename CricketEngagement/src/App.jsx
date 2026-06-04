@@ -23,6 +23,7 @@ import CricketHub from './features/account/CricketHub'
 import ProfilePage from './features/account/ProfilePage'
 import SharePage from './features/account/SharePage'
 import SaveResultControls from './features/account/SaveResultControls'
+import NetworkPage from './features/network/NetworkPage'
 
 const players = featuredPlayers
 
@@ -34,6 +35,21 @@ const featuredAnimations = Object.values(players).reduce((animations, player) =>
 }, {})
 
 const knownJerseyNumbers = playerMeta.jerseyNumbers
+
+function NavGroup({ active, label, items }) {
+  return (
+    <div className={`nav-group${active ? ' active' : ''}`}>
+      <button type="button">{label}</button>
+      <div className="nav-dropdown">
+        {items.map((item) => (
+          <button className={item.active ? 'active' : ''} key={item.label} onClick={item.onClick} type="button">
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const roleOrder = {
   batter: 1,
@@ -1764,7 +1780,7 @@ function FanPersonalityTest({ onNavigate }) {
 }
 
 function App() {
-  const { authLoading, toast, user } = useAuth()
+  const { authLoading, openAuthModal, toast, user } = useAuth()
   const backdropRef = useRef(null)
   const pointerTargetRef = useRef(null)
   const pendingPointerRef = useRef(null)
@@ -1794,6 +1810,10 @@ function App() {
       return 'saved'
     }
 
+    if (typeof window !== 'undefined' && window.location.pathname === '/network') {
+      return 'network'
+    }
+
     if (typeof window !== 'undefined' && window.location.pathname === '/profile') {
       return 'profile'
     }
@@ -1816,6 +1836,11 @@ function App() {
     '--nav-team-secondary': favoriteTeam.colors.secondary,
   } : undefined
   const changeView = (view, options = {}) => {
+    if (view === 'profile' && !user) {
+      openAuthModal('signIn')
+      return
+    }
+
     const playerQuery = options.player ? `?player=${getPlayerSlug(options.player)}` : ''
     const path =
       view === 'fan'
@@ -1830,6 +1855,8 @@ function App() {
                 ? `/visualizations${playerQuery}`
                 : view === 'saved'
                   ? '/hub'
+                  : view === 'network'
+                    ? '/network'
                   : view === 'profile'
                     ? '/profile'
                     : '/'
@@ -1855,11 +1882,13 @@ function App() {
                   ? 'visualizations'
                   : ['/hub', '/saved-results'].includes(window.location.pathname)
                     ? 'saved'
-                    : window.location.pathname === '/profile'
-                      ? 'profile'
-                      : window.location.pathname.startsWith('/share/')
-                        ? 'share'
-                        : 'home',
+                    : window.location.pathname === '/network'
+                      ? 'network'
+                      : window.location.pathname === '/profile'
+                        ? 'profile'
+                        : window.location.pathname.startsWith('/share/')
+                          ? 'share'
+                          : 'home',
       )
     }
 
@@ -1928,48 +1957,30 @@ function App() {
         >
           Home
         </button>
-        <button
-          className={activeView === 'timeline' ? 'active' : ''}
-          onClick={() => changeView('timeline')}
-          type="button"
-        >
-          Timeline
-        </button>
-        <button
-          className={activeView === 'dynasty' ? 'active' : ''}
-          onClick={() => changeView('dynasty')}
-          type="button"
-        >
-          Dream Team
-        </button>
-        <button
-          className={activeView === 'auction' ? 'active' : ''}
-          onClick={() => changeView('auction')}
-          type="button"
-        >
-          Auction
-        </button>
-        <button
-          className={activeView === 'visualizations' ? 'active' : ''}
-          onClick={() => changeView('visualizations')}
-          type="button"
-        >
-          Visualizations
-        </button>
-        <button
-          className={activeView === 'fan' ? 'active' : ''}
-          onClick={() => changeView('fan')}
-          type="button"
-        >
-          Fan Test
-        </button>
-        <button
-          className={activeView === 'saved' ? 'active hub-nav-button' : 'hub-nav-button'}
-          onClick={() => changeView('saved')}
-          type="button"
-        >
-          My Cricket Hub
-        </button>
+        <NavGroup
+          active={['dynasty', 'auction', 'fan'].includes(activeView)}
+          label="Activities"
+          items={[
+            { label: 'Dream Team', active: activeView === 'dynasty', onClick: () => changeView('dynasty') },
+            { label: 'Auction', active: activeView === 'auction', onClick: () => changeView('auction') },
+            { label: 'Fan Test', active: activeView === 'fan', onClick: () => changeView('fan') },
+          ]}
+        />
+        <NavGroup
+          active={['visualizations', 'timeline'].includes(activeView)}
+          label="Cricket Info"
+          items={[
+            { label: 'Visualizations', active: activeView === 'visualizations', onClick: () => changeView('visualizations') },
+            { label: 'IPL Timeline', active: activeView === 'timeline', onClick: () => changeView('timeline') },
+          ]}
+        />
+        <NavGroup
+          active={activeView === 'network'}
+          label="Network"
+          items={[
+            { label: 'Fan Network', active: activeView === 'network', onClick: () => changeView('network') },
+          ]}
+        />
         <AccountNav activeView={activeView} onNavigate={changeView} />
       </nav>
 
@@ -1983,6 +1994,8 @@ function App() {
         <AuctionSimulator cricketerProfiles={cricketerProfiles} featuredAnimations={featuredAnimations} iplTeams={iplTeams} onNavigate={changeView} />
       ) : activeView === 'fan' ? (
         <FanPersonalityTest onNavigate={changeView} />
+      ) : activeView === 'network' ? (
+        <NetworkPage />
       ) : activeView === 'saved' ? (
         <CricketHub onNavigate={changeView} />
       ) : activeView === 'profile' ? (

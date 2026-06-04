@@ -9,6 +9,7 @@ const collectionNames = {
 }
 
 const localKey = 'cricket-fan-engagement.savedResults'
+const fanPostsLocalKey = 'cricket-fan-engagement.fanPosts'
 
 function createId() {
   return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -28,6 +29,18 @@ function readLocalStore() {
 
 function writeLocalStore(store) {
   window.localStorage.setItem(localKey, JSON.stringify(store))
+}
+
+function readLocalFanPosts() {
+  try {
+    return JSON.parse(window.localStorage.getItem(fanPostsLocalKey) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function writeLocalFanPosts(posts) {
+  window.localStorage.setItem(fanPostsLocalKey, JSON.stringify(posts))
 }
 
 function getLocalCollection(type) {
@@ -144,6 +157,29 @@ export async function updateResultVisibility(type, id, userId, visibility) {
   ))
   writeLocalStore(store)
   return { id, visibility }
+}
+
+export async function deleteResult(type, id, userId) {
+  const name = collectionNames[type]
+  if (!name || !id || !userId) return null
+
+  if (hasFirebaseConfig && firebaseDb) {
+    const ref = firestoreApi.doc(firebaseDb, name, id)
+    const snap = await firestoreApi.getDoc(ref)
+    if (!snap.exists() || snap.data().userId !== userId) throw new Error('You can only delete your own saved results.')
+    await firestoreApi.deleteDoc(ref)
+    return { id }
+  }
+
+  const store = readLocalStore()
+  store[name] = (store[name] ?? []).filter((item) => !(item.id === id && item.userId === userId))
+  writeLocalStore(store)
+
+  if (type === 'post') {
+    writeLocalFanPosts(readLocalFanPosts().filter((item) => !(item.id === id && item.userId === userId)))
+  }
+
+  return { id }
 }
 
 export function getSharePath(type, id) {

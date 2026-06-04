@@ -130,6 +130,7 @@ export default function ProfilePage() {
   }
 
   const publicItems = [...results.auction, ...results.dreamTeam, ...results.quiz, ...results.post].filter((item) => item.visibility === 'public')
+  const userPosts = results.post ?? []
   const favoriteTeam = iplTeams.find((team) => team.id === favoriteFranchise) || iplTeams.find((team) => team.id === 'rcb')
   const saveProfile = async (event) => {
     event.preventDefault()
@@ -202,9 +203,23 @@ export default function ProfilePage() {
           <p>{publicItems.length} public shared item{publicItems.length === 1 ? '' : 's'}</p>
         </section>
         <section className="profile-card fan-posts-foundation">
-          <span>Fan Posts Foundation</span>
-          <strong>Posts are ready for the community layer.</strong>
-          <p>Post title, body, author, timestamp, optional linked result, and public/private visibility are represented in the fanPosts collection structure.</p>
+          <span>Fan Posts</span>
+          <strong>{userPosts.length} saved post{userPosts.length === 1 ? '' : 's'}</strong>
+          {userPosts.length ? (
+            <div className="profile-post-list">
+              {userPosts.slice(0, 3).map((post) => (
+                <article key={post.id}>
+                  {post.data?.image && <img alt={`${post.data.title} post`} src={post.data.image} />}
+                  <div>
+                    <strong>{post.data?.title}</strong>
+                    <p>{post.data?.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p>Your Network posts will appear here after you publish them.</p>
+          )}
         </section>
       </div>
     </section>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import iplTeams from '../../data/iplTeams.json'
 import { useAuth } from './AuthProvider'
-import { getSharePath, listUserResults, updateResultVisibility } from './savedResults'
+import { deleteResult, getSharePath, listUserResults, updateResultVisibility } from './savedResults'
 
 const labels = {
   auction: 'Saved Auction Results',
@@ -109,13 +109,31 @@ function DreamTeamDetails({ data }) {
   )
 }
 
+function PostDetails({ item }) {
+  const reactions = item.reactions ?? {}
+  const reactionCount = Object.values(reactions).reduce((total, userIds) => total + (userIds?.length ?? 0), 0)
+
+  return (
+    <div className="saved-result-details saved-post-details">
+      {item.data?.image && <img alt={`${item.data.title} post`} src={item.data.image} />}
+      <div className="saved-result-statline">
+        <span>{reactionCount} reactions</span>
+        <span>{item.replies?.length ?? 0} replies</span>
+        <span>{item.visibility || 'public'}</span>
+      </div>
+      {item.data?.linkedResult && <p>Linked: {item.data.linkedResult}</p>}
+    </div>
+  )
+}
+
 function SavedResultDetails({ item, type }) {
   if (type === 'auction') return <AuctionDetails data={item.data} />
   if (type === 'dreamTeam') return <DreamTeamDetails data={item.data} />
+  if (type === 'post') return <PostDetails item={item} />
   return null
 }
 
-function SavedResultCard({ item, onVisibilityChange, type }) {
+function SavedResultCard({ item, onDelete, onVisibilityChange, type }) {
   const sharePath = getSharePath(type, item.id)
 
   return (
@@ -133,6 +151,11 @@ function SavedResultCard({ item, onVisibilityChange, type }) {
           <option value="public">Public</option>
         </select>
         {item.visibility === 'public' && <a href={sharePath}>Share Link</a>}
+        {type === 'post' && (
+          <button className="delete-post-button" onClick={() => onDelete(type, item.id)} type="button">
+            Delete Post
+          </button>
+        )}
       </div>
     </article>
   )
@@ -172,6 +195,20 @@ export default function CricketHub({ onNavigate }) {
     }
   }
 
+  const deleteSavedPost = async (type, id) => {
+    if (type !== 'post') return
+    const confirmed = window.confirm('Delete this fan post? This removes it from My Cricket Hub and the Network feed.')
+    if (!confirmed) return
+
+    try {
+      await deleteResult(type, id, user.uid)
+      setResults(await listUserResults(user.uid))
+      setLoadStatus('Post deleted.')
+    } catch (error) {
+      setLoadStatus(error?.code === 'permission-denied' ? 'Firestore blocked this delete. Check published rules.' : 'Post could not be deleted.')
+    }
+  }
+
   if (!user) {
     return (
       <section className="hub-page">
@@ -204,7 +241,7 @@ export default function CricketHub({ onNavigate }) {
             </div>
             {(results[type]?.length ?? 0) ? (
               results[type].map((item) => (
-                <SavedResultCard item={item} key={item.id} onVisibilityChange={changeVisibility} type={type} />
+                <SavedResultCard item={item} key={item.id} onDelete={deleteSavedPost} onVisibilityChange={changeVisibility} type={type} />
               ))
             ) : (
               <p className="hub-empty">Nothing saved yet.</p>

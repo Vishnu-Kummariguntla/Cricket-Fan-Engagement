@@ -33,15 +33,27 @@ export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
 
   return (
     <section className="auction-page auction-results-page" style={{ '--auction-accent': userTeam.colors.accent, '--auction-secondary': userTeam.colors.secondary }}>
-      <div className="auction-results-hero">
-        <span>Post-Auction Analysis</span>
-        <h1>{userTeam.shortName} Auction Grade: {analysis.grade}</h1>
-        <p>{analysis.scoutReport}</p>
-        <SaveResultControls buttonLabel="Save Auction Result" getPayload={getAuctionSavePayload} onSaved={markSaved} type="auction" />
-        <div className="results-action-row">
-          <button onClick={onRestart} type="button">Run Another Auction</button>
+      <div className="auction-results-shell">
+        <div className="auction-results-hero">
+          <div>
+            <span>Post-Auction Analysis</span>
+            <h1>{userTeam.shortName} Auction Grade: {analysis.grade}</h1>
+            <p>{analysis.scoutReport}</p>
+          </div>
+          <div className="auction-results-grade-card">
+            <span>Squad Rating</span>
+            <strong>{analysis.squadRating}</strong>
+            <small>out of 99</small>
+          </div>
         </div>
-        {saveStatus && <p className="save-result-status">{saveStatus}</p>}
+
+        <div className="auction-results-actions-panel">
+          <SaveResultControls buttonLabel="Save Auction Result" getPayload={getAuctionSavePayload} onSaved={markSaved} type="auction" />
+          <div className="results-action-row">
+            <button onClick={onRestart} type="button">Run Another Auction</button>
+          </div>
+          {saveStatus && <p className="save-result-status">{saveStatus}</p>}
+        </div>
       </div>
 
       <div className="auction-results-grid">
@@ -70,7 +82,7 @@ export default function AuctionResults({ userTeam, squadLayout, onRestart }) {
       </div>
 
       <div className="auction-final-board">
-        <div>
+        <div className="auction-final-board-main">
           <span>Starting XI</span>
           <p>{startingPlayers.map((player) => player.name).join(', ') || 'Not assigned'}</p>
         </div>

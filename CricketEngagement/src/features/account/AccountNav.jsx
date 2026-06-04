@@ -17,7 +17,7 @@ export default function AccountNav({ activeView, onNavigate }) {
   if (!user) {
     return (
       <button className="account-signin-button" onClick={() => openAuthModal('signIn')} type="button">
-        Sign In
+        Profile
       </button>
     )
   }
@@ -46,6 +46,7 @@ export default function AccountNav({ activeView, onNavigate }) {
       {open && (
         <div className="account-dropdown">
           <button onClick={() => { onNavigate('profile'); setOpen(false) }} type="button">Profile</button>
+          <button onClick={() => { onNavigate('saved'); setOpen(false) }} type="button">My Cricket Hub</button>
           <button className="account-logout-button" onClick={() => { logOut(); setOpen(false) }} type="button">Log Out</button>
         </div>
       )}

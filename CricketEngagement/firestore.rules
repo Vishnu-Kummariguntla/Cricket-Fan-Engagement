@@ -86,7 +86,13 @@ service cloud.firestore {
     match /fanPosts/{id} {
       allow read: if publicOrOwner();
       allow create: if ownsIncomingDocument();
-      allow update, delete: if ownsDocument();
+      allow update: if ownsDocument()
+        || (
+          signedIn()
+          && resource.data.visibility == 'public'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'replies', 'updatedAt'])
+        );
+      allow delete: if ownsDocument();
     }
 
     match /favorites/{id} {
