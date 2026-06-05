@@ -17,6 +17,25 @@ import {
 const phaseOrder = ['Open bidding', 'Going once', 'Going twice']
 const bidSeconds = 8
 
+const categoryLabels = {
+  batter: 'Batsmen / Keepers',
+  bowler: 'Bowlers',
+  allrounder: 'All-rounders',
+}
+
+function getAuctionCategory(player) {
+  if (player?.role === 'bowler') return 'bowler'
+  if (player?.role === 'allrounder') return 'allrounder'
+  return 'batter'
+}
+
+function getUpcomingByCategory(players, playerIndex) {
+  return players.slice(playerIndex + 1).reduce((groups, upcomingPlayer) => {
+    const category = getAuctionCategory(upcomingPlayer)
+    return { ...groups, [category]: [...(groups[category] ?? []), upcomingPlayer] }
+  }, {})
+}
+
 function getBotDuelLimit(player) {
   if (!player) return 0
   if (player.estimatedMarketValue >= 18) return 18
@@ -51,6 +70,7 @@ export default function AuctionRoom({
   const [botThinking, setBotThinking] = useState(false)
   const [saleBanner, setSaleBanner] = useState(null)
   const [userPassed, setUserPassed] = useState(false)
+  const [showUpcomingPlayers, setShowUpcomingPlayers] = useState(false)
   const saleLockRef = useRef(false)
   const soldKeysRef = useRef(new Set())
   const botTimerRef = useRef(0)
@@ -69,6 +89,10 @@ export default function AuctionRoom({
   const auctionClosed = !player || userTeam.squad.length >= maxSquadSize || Boolean(saleBanner)
   const userIsHighestBidder = highestBidderId === userTeamId
   const userCanBid = !auctionClosed && !userPassed && !userIsHighestBidder
+  const currentCategory = getAuctionCategory(player)
+  const nextCategoryIndex = players.findIndex((auctionPlayer, index) => index > playerIndex && getAuctionCategory(auctionPlayer) !== currentCategory)
+  const canSkipCategory = Boolean(player) && !saleBanner && nextCategoryIndex > playerIndex
+  const upcomingByCategory = getUpcomingByCategory(players, playerIndex)
   const resetForNextPlayer = (nextTeams, soldLogEntries) => {
     const nextIndex = playerIndex + 1
 
@@ -86,6 +110,28 @@ export default function AuctionRoom({
     botDuelCountRef.current = 0
 
     if (nextIndex >= players.length) onFinish()
+  }
+
+  const skipCategory = () => {
+    if (!canSkipCategory) return
+    const skippedPlayers = players.slice(playerIndex, nextCategoryIndex)
+    const skippedLabel = categoryLabels[currentCategory]
+
+    window.clearTimeout(botTimerRef.current)
+    setPlayerIndex(nextCategoryIndex)
+    setPhase('Open bidding')
+    setHighestBidderId('')
+    setCurrentBid(players[nextCategoryIndex]?.basePrice ?? 0)
+    setCustomBid('')
+    setCountdown(bidSeconds)
+    setBotThinking(false)
+    setSaleBanner(null)
+    setUserPassed(false)
+    setShowUpcomingPlayers(false)
+    botQuietKeyRef.current = ''
+    botDuelCountRef.current = 0
+    saleLockRef.current = false
+    setLogEntries((current) => [`Skipped ${skippedPlayers.length} ${skippedLabel.toLowerCase()} and moved to ${categoryLabels[getAuctionCategory(players[nextCategoryIndex])]}.`, ...current].slice(0, 36))
   }
 
   const completeSale = (winnerId, saleAmount, saleTeams = teams) => {
@@ -292,13 +338,64 @@ export default function AuctionRoom({
           <span>{userTeam.name}</span>
           <h1>Mega Auction Room</h1>
         </div>
-        <button disabled={!hasValidPlayingTwelve} onClick={onFinish} type="button">Complete Auction</button>
+        <div className="auction-room-actions">
+          <button onClick={() => setShowUpcomingPlayers((current) => !current)} type="button">
+            {showUpcomingPlayers ? 'Hide Upcoming' : 'View Upcoming'}
+          </button>
+          <button disabled={!canSkipCategory} onClick={skipCategory} type="button">Skip Category</button>
+          <button disabled={!hasValidPlayingTwelve} onClick={onFinish} type="button">Complete Auction</button>
+        </div>
       </div>
 
       <div className="auction-room-grid">
         <SquadBoard onViewPlayer={onViewPlayer} setSquadLayout={setSquadLayout} squadLayout={squadLayout} userTeam={userTeam} />
 
         <main className="auction-main-stage">
+          <AnimatePresence>
+            {showUpcomingPlayers && (
+              <motion.section
+                animate={{ opacity: 1, y: 0 }}
+                className="auction-upcoming-panel"
+                exit={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, y: -8 }}
+              >
+                <div className="auction-panel-heading">
+                  <div className="auction-upcoming-heading">
+                    <span>Upcoming Lots</span>
+                    <strong>Players left by category</strong>
+                  </div>
+                  <button onClick={() => setShowUpcomingPlayers(false)} type="button">Close</button>
+                </div>
+                <div className="auction-upcoming-grid">
+                  {Object.entries(categoryLabels).map(([category, label]) => {
+                    const upcomingPlayers = upcomingByCategory[category] ?? []
+
+                    return (
+                      <article key={category}>
+                        <div>
+                          <strong>{label}</strong>
+                          <span>{upcomingPlayers.length} left</span>
+                        </div>
+                        {upcomingPlayers.length ? (
+                          <ul>
+                            {upcomingPlayers.map((upcomingPlayer) => (
+                              <li key={upcomingPlayer.id}>
+                                <span>{upcomingPlayer.name}</span>
+                                <small>{upcomingPlayer.iplTeam} · {formatCrores(upcomingPlayer.basePrice)}</small>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p>No more players in this category.</p>
+                        )}
+                      </article>
+                    )
+                  })}
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             <motion.div animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} initial={{ opacity: 0, y: 12 }} key={player?.name ?? 'done'}>
               {player ? (

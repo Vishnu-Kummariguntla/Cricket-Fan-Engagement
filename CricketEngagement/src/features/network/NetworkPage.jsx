@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../account/AuthProvider'
 import { addFanPostReply, createFanPost, listPublicFanPosts, updateFanPostReaction } from './fanPostStore'
+import { listDirectMessages, listFollowing, listNetworkUsers, sendDirectMessage, toggleFollow } from './networkSocialStore'
 
 const reactionLabels = [
-  ['like', 'Like'],
-  ['dislike', 'Dislike'],
-  ['fire', 'Fire'],
-  ['clap', 'Respect'],
+  ['like', '👍', 'Like'],
+  ['dislike', '👎', 'Dislike'],
+  ['fire', '🔥', 'Fire'],
+  ['clap', '👏', 'Respect'],
 ]
 
 function getImageDataUrl(file) {
@@ -23,10 +24,23 @@ function getImageDataUrl(file) {
   })
 }
 
-function FanPostCard({ onReact, onReply, post, user }) {
+function getPostAuthor(post) {
+  return {
+    userId: post.userId,
+    displayName: post.userName || 'Cricket Fan',
+    username: post.userName || 'Cricket Fan',
+    photoURL: post.userAvatar || '',
+    favoriteFranchise: post.userFavoriteFranchise || '',
+    favoritePlayer: post.userFavoritePlayer || '',
+  }
+}
+
+function FanPostCard({ followingIds, onFollow, onOpenProfile, onReact, onReply, post, user }) {
   const [replyText, setReplyText] = useState('')
   const created = post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now'
   const replies = post.replies ?? []
+  const ownPost = user?.uid === post.userId
+  const following = followingIds.has(post.userId)
 
   const submitReply = async (event) => {
     event.preventDefault()
@@ -38,13 +52,24 @@ function FanPostCard({ onReact, onReply, post, user }) {
 
   return (
     <article className="network-post-card">
-      <div className="network-post-author">
-        <span>{(post.userName || 'CF').slice(0, 2).toUpperCase()}</span>
+      <button className="network-post-author" onClick={() => onOpenProfile(post)} type="button">
+        <span>
+          {post.userAvatar ? <img alt={`${post.userName || 'Cricket Fan'} avatar`} src={post.userAvatar} /> : (post.userName || 'CF').slice(0, 2).toUpperCase()}
+        </span>
         <div>
           <strong>{post.userName || 'Cricket Fan'}</strong>
           <small>{created}</small>
         </div>
-      </div>
+      </button>
+
+      {!ownPost && (
+        <div className="network-post-social-actions">
+          <button onClick={() => onFollow(getPostAuthor(post))} type="button">
+            {following ? 'Following' : 'Follow'}
+          </button>
+          <span>{following ? 'Added to your cricket network' : 'Follow from posts, then message from the Messages tab'}</span>
+        </div>
+      )}
 
       <div className="network-post-copy">
         <h2>{post.data?.title}</h2>
@@ -58,12 +83,14 @@ function FanPostCard({ onReact, onReply, post, user }) {
       {post.data?.linkedResult && <p className="network-linked-result">Linked result: {post.data.linkedResult}</p>}
 
       <div className="network-reactions" aria-label="Post reactions">
-        {reactionLabels.map(([type, label]) => {
+        {reactionLabels.map(([type, icon, label]) => {
           const userIds = post.reactions?.[type] ?? []
           const active = user?.uid && userIds.includes(user.uid)
           return (
             <button className={active ? 'active' : ''} key={type} onClick={() => onReact(post, type)} type="button">
-              {label} <span>{userIds.length}</span>
+              <b aria-hidden="true">{icon}</b>
+              {label}
+              <span>{userIds.length}</span>
             </button>
           )
         })}
@@ -86,7 +113,85 @@ function FanPostCard({ onReact, onReply, post, user }) {
   )
 }
 
-export default function NetworkPage() {
+function MessagingPanel({
+  messages,
+  messageText,
+  onMessageText,
+  onSearch,
+  onSelectUser,
+  onSendMessage,
+  searchText,
+  selectedUser,
+  users,
+  user,
+}) {
+  return (
+    <section className="network-messaging-panel">
+      <div className="network-section-heading">
+        <span>Direct Messages</span>
+        <strong>Search fans and start a cricket conversation.</strong>
+      </div>
+
+      <div className="network-message-layout">
+        <aside className="network-user-search">
+          <label>
+            Search People
+            <input onChange={(event) => onSearch(event.target.value)} placeholder="Username, player, or team" value={searchText} />
+          </label>
+          <div>
+            {users.length ? users.map((profile) => (
+              <button className={selectedUser?.userId === profile.userId ? 'active' : ''} key={profile.userId} onClick={() => onSelectUser(profile)} type="button">
+                <span>{profile.photoURL ? <img alt={`${profile.displayName} avatar`} src={profile.photoURL} /> : profile.displayName.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{profile.displayName}</strong>
+                  <small>{profile.favoritePlayer || profile.favoriteFranchise || 'Cricket fan'}</small>
+                </div>
+              </button>
+            )) : (
+              <p>No matching fans yet.</p>
+            )}
+          </div>
+        </aside>
+
+        <section className="network-message-thread">
+          {selectedUser ? (
+            <>
+              <div className="network-message-recipient">
+                <span>{selectedUser.photoURL ? <img alt={`${selectedUser.displayName} avatar`} src={selectedUser.photoURL} /> : selectedUser.displayName.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{selectedUser.displayName}</strong>
+                  <small>{selectedUser.favoritePlayer || selectedUser.favoriteFranchise || 'Cricket fan'}</small>
+                </div>
+              </div>
+              <div className="network-message-list">
+                {messages.length ? messages.map((message) => (
+                  <p className={message.senderId === user?.uid ? 'mine' : ''} key={message.id}>
+                    <span>{message.body}</span>
+                    <small>{message.createdAt ? new Date(message.createdAt).toLocaleString() : 'Just now'}</small>
+                  </p>
+                )) : (
+                  <p className="network-empty-thread">No messages yet.</p>
+                )}
+              </div>
+              <form className="network-message-form" onSubmit={onSendMessage}>
+                <input onChange={(event) => onMessageText(event.target.value)} placeholder="Write a direct message" value={messageText} />
+                <button type="submit">Send</button>
+              </form>
+            </>
+          ) : (
+            <div className="network-message-placeholder">
+              <span>Messages</span>
+              <strong>Select a fan to message.</strong>
+              <p>Search public profiles or users who have posted in the Network.</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </section>
+  )
+}
+
+export default function NetworkPage({ initialTab = 'create', onNavigate }) {
   const { openAuthModal, user } = useAuth()
   const [form, setForm] = useState({ title: '', body: '', linkedResult: '' })
   const [image, setImage] = useState('')
@@ -94,7 +199,13 @@ export default function NetworkPage() {
   const [posts, setPosts] = useState([])
   const [status, setStatus] = useState('Loading fan posts...')
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('create')
+  const [activeTab, setActiveTab] = useState(initialTab)
+  const [followingIds, setFollowingIds] = useState(new Set())
+  const [messageUsers, setMessageUsers] = useState([])
+  const [messageSearch, setMessageSearch] = useState('')
+  const [selectedMessageUser, setSelectedMessageUser] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [messageText, setMessageText] = useState('')
   const canPost = Boolean(user && form.title.trim() && form.body.trim())
   const totalReactions = useMemo(() => posts.reduce((total, post) => (
     total + Object.values(post.reactions ?? {}).reduce((sum, userIds) => sum + userIds.length, 0)
@@ -113,6 +224,41 @@ export default function NetworkPage() {
   useEffect(() => {
     void refreshPosts()
   }, [])
+
+  useEffect(() => {
+    if (['create', 'feed', 'messages'].includes(initialTab)) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
+
+  useEffect(() => {
+    if (!user) {
+      setFollowingIds(new Set())
+      return
+    }
+
+    listFollowing(user.uid)
+      .then((items) => setFollowingIds(new Set(items.map((item) => item.followingId))))
+      .catch((error) => console.warn('Unable to load follows', error))
+  }, [user])
+
+  useEffect(() => {
+    if (activeTab !== 'messages') return
+    listNetworkUsers(messageSearch)
+      .then((profiles) => setMessageUsers(profiles.filter((profile) => profile.userId !== user?.uid)))
+      .catch((error) => console.warn('Unable to search network users', error))
+  }, [activeTab, messageSearch, user?.uid])
+
+  useEffect(() => {
+    if (!user?.uid || !selectedMessageUser?.userId) {
+      setMessages([])
+      return
+    }
+
+    listDirectMessages(user.uid, selectedMessageUser.userId)
+      .then(setMessages)
+      .catch((error) => console.warn('Unable to load direct messages', error))
+  }, [selectedMessageUser?.userId, user?.uid])
 
   const updateImage = async (event) => {
     const file = event.target.files?.[0]
@@ -172,6 +318,47 @@ export default function NetworkPage() {
     setPosts((current) => current.map((item) => (item.id === updated.id ? updated : item)))
   }
 
+  const openPublicProfile = (post) => {
+    const userId = post?.userId
+    if (!userId) return
+    const profileFallback = {
+      userName: post.userName || '',
+      userAvatar: post.userAvatar || '',
+      favoriteFranchise: post.userFavoriteFranchise || (post.userId === user?.uid ? user.favoriteFranchise : '') || '',
+      favoritePlayer: post.userFavoritePlayer || (post.userId === user?.uid ? user.favoritePlayer : '') || '',
+    }
+    window.sessionStorage.setItem(`cricket-public-profile-fallback.${userId}`, JSON.stringify(profileFallback))
+    onNavigate('publicProfile', { userId })
+  }
+
+  const followUser = async (targetUser) => {
+    if (!user) {
+      openAuthModal('signIn')
+      return
+    }
+
+    const result = await toggleFollow(user, targetUser)
+    setFollowingIds((current) => {
+      const next = new Set(current)
+      if (result.following) next.add(targetUser.userId)
+      else next.delete(targetUser.userId)
+      return next
+    })
+  }
+
+  const sendMessage = async (event) => {
+    event.preventDefault()
+    if (!user) {
+      openAuthModal('signIn')
+      return
+    }
+    if (!selectedMessageUser || !messageText.trim()) return
+
+    const sent = await sendDirectMessage(user, selectedMessageUser, messageText)
+    if (sent) setMessages((current) => [...current, sent])
+    setMessageText('')
+  }
+
   return (
     <section className="network-page pointer-reactive">
       <div className="network-hero">
@@ -186,19 +373,13 @@ export default function NetworkPage() {
         </div>
       </div>
 
-      <div className="network-tabs" aria-label="Network views">
-        <button className={activeTab === 'create' ? 'active' : ''} onClick={() => setActiveTab('create')} type="button">
-          Create Post
-        </button>
-        <button className={activeTab === 'feed' ? 'active' : ''} onClick={() => setActiveTab('feed')} type="button">
-          View Other Posts
-        </button>
-      </div>
-
       <div className="network-layout">
         {activeTab === 'create' ? (
           <form className="network-composer" onSubmit={submitPost}>
-            <span>Create Post</span>
+            <div className="network-section-heading">
+              <span>Create Post</span>
+              <strong>Publish a fan take, strategy, or prediction.</strong>
+            </div>
             <input onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Post title" value={form.title} />
             <textarea onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))} placeholder="Share a match reaction, auction strategy, prediction, or player opinion" rows={5} value={form.body} />
             <input onChange={(event) => setForm((current) => ({ ...current, linkedResult: event.target.value }))} placeholder="Optional linked saved result or context" value={form.linkedResult} />
@@ -216,13 +397,30 @@ export default function NetworkPage() {
             <button disabled={saving || (user && !canPost)} type="submit">{saving ? 'Posting...' : user ? 'Publish Post' : 'Sign In to Post'}</button>
             {status && <p className="network-status">{status}</p>}
           </form>
-        ) : (
+        ) : activeTab === 'feed' ? (
           <div className="network-feed">
+            <div className="network-section-heading">
+              <span>View Other Posts</span>
+              <strong>Follow users from their posts and build your cricket network.</strong>
+            </div>
             {status && !posts.length && <p className="network-status">{status}</p>}
             {posts.map((post) => (
-              <FanPostCard key={post.id} onReact={reactToPost} onReply={replyToPost} post={post} user={user} />
+              <FanPostCard followingIds={followingIds} key={post.id} onFollow={followUser} onOpenProfile={openPublicProfile} onReact={reactToPost} onReply={replyToPost} post={post} user={user} />
             ))}
           </div>
+        ) : (
+          <MessagingPanel
+            messages={messages}
+            messageText={messageText}
+            onMessageText={setMessageText}
+            onSearch={setMessageSearch}
+            onSelectUser={setSelectedMessageUser}
+            onSendMessage={sendMessage}
+            searchText={messageSearch}
+            selectedUser={selectedMessageUser}
+            user={user}
+            users={messageUsers}
+          />
         )}
       </div>
     </section>

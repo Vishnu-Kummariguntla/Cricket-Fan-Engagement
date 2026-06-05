@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import AuctionResults from './AuctionResults'
 import AuctionRoom from './AuctionRoom'
 import AuctionSetup from './AuctionSetup'
-import { createAuctionPlayers, createAuctionTeams } from './auctionEngine'
+import { createAuctionPlayerQueue, createAuctionPlayers, createAuctionTeams } from './auctionEngine'
 
 const emptyLayout = {
   starting: Array(11).fill(''),
@@ -11,7 +11,8 @@ const emptyLayout = {
 }
 
 export default function AuctionSimulator({ iplTeams, featuredAnimations, cricketerProfiles, onNavigate }) {
-  const auctionPlayers = useMemo(() => createAuctionPlayers(iplTeams, featuredAnimations, cricketerProfiles), [cricketerProfiles, featuredAnimations, iplTeams])
+  const auctionPlayerPool = useMemo(() => createAuctionPlayers(iplTeams, featuredAnimations, cricketerProfiles), [cricketerProfiles, featuredAnimations, iplTeams])
+  const [auctionPlayers, setAuctionPlayers] = useState(() => createAuctionPlayerQueue(auctionPlayerPool))
   const [userTeamId, setUserTeamId] = useState('')
   const [teams, setTeams] = useState([])
   const [playerIndex, setPlayerIndex] = useState(0)
@@ -25,10 +26,12 @@ export default function AuctionSimulator({ iplTeams, featuredAnimations, cricket
 
   const startAuction = (teamId) => {
     const selectedTeam = iplTeams.find((team) => team.id === teamId)
+    const playerQueue = createAuctionPlayerQueue(auctionPlayerPool)
+    setAuctionPlayers(playerQueue)
     setUserTeamId(teamId)
     setTeams(createAuctionTeams(iplTeams, teamId))
     setPlayerIndex(0)
-    setCurrentBid(auctionPlayers[0]?.basePrice ?? 0)
+    setCurrentBid(playerQueue[0]?.basePrice ?? 0)
     setHighestBidderId('')
     setPhase('Open bidding')
     setCustomBid('')
@@ -38,10 +41,12 @@ export default function AuctionSimulator({ iplTeams, featuredAnimations, cricket
   }
 
   const restart = () => {
+    const playerQueue = createAuctionPlayerQueue(auctionPlayerPool)
+    setAuctionPlayers(playerQueue)
     setUserTeamId('')
     setTeams([])
     setPlayerIndex(0)
-    setCurrentBid(auctionPlayers[0]?.basePrice ?? 0)
+    setCurrentBid(playerQueue[0]?.basePrice ?? 0)
     setHighestBidderId('')
     setPhase('Open bidding')
     setCustomBid('')
@@ -89,4 +94,3 @@ export default function AuctionSimulator({ iplTeams, featuredAnimations, cricket
     />
   )
 }
-

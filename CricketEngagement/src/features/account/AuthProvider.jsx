@@ -82,6 +82,15 @@ async function upsertUserDocument(user) {
   if (!existingProfile?.createdAt) profileUpdate.createdAt = firestoreApi.serverTimestamp()
 
   await firestoreApi.setDoc(userRef, profileUpdate, { merge: true })
+  await firestoreApi.setDoc(firestoreApi.doc(firebaseDb, 'publicProfiles', user.uid), {
+    userId: user.uid,
+    username: existingProfile?.username || normalizedUser.displayName,
+    displayName: existingProfile?.displayName || existingProfile?.username || normalizedUser.displayName,
+    photoURL: normalizedUser.photoURL,
+    favoriteFranchise: existingProfile?.favoriteFranchise || '',
+    favoritePlayer: existingProfile?.favoritePlayer || '',
+    updatedAt: firestoreApi.serverTimestamp(),
+  }, { merge: true })
 }
 
 async function syncUserDocument(user) {

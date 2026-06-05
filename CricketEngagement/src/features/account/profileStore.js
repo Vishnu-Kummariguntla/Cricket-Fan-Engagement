@@ -34,7 +34,10 @@ function isPermissionError(error) {
 
 function getDefaultProfile(user) {
   return {
+    userId: user.uid,
     username: user.displayName || '',
+    displayName: user.displayName || '',
+    photoURL: user.photoURL || '',
     favoriteFranchise: 'rcb',
     favoritePlayer: '',
   }
@@ -107,6 +110,40 @@ export async function getUserProfile(user) {
 
   const localProfiles = readLocalProfiles()
   return localProfiles[user.uid] || getDefaultProfile(user)
+}
+
+export async function getPublicUserProfile(userId, fallback = {}) {
+  if (!userId) return null
+
+  if (hasFirebaseConfig && firebaseDb) {
+    try {
+      const snap = await firestoreApi.getDoc(firestoreApi.doc(firebaseDb, 'publicProfiles', userId))
+      if (snap.exists()) {
+        const value = snap.data()
+        return {
+          userId,
+          username: value.username || value.displayName || fallback.userName || 'Cricket Fan',
+          displayName: value.displayName || value.username || fallback.userName || 'Cricket Fan',
+          photoURL: value.photoURL || fallback.userAvatar || '',
+          favoriteFranchise: value.favoriteFranchise || fallback.favoriteFranchise || '',
+          favoritePlayer: value.favoritePlayer || '',
+        }
+      }
+    } catch (error) {
+      if (!isPermissionError(error)) throw error
+    }
+  }
+
+  const localProfiles = readLocalProfiles()
+  const profile = localProfiles[userId]
+  return {
+    userId,
+    username: profile?.username || profile?.displayName || fallback.userName || 'Cricket Fan',
+    displayName: profile?.displayName || profile?.username || fallback.userName || 'Cricket Fan',
+    photoURL: profile?.photoURL || fallback.userAvatar || '',
+    favoriteFranchise: profile?.favoriteFranchise || fallback.favoriteFranchise || '',
+    favoritePlayer: profile?.favoritePlayer || fallback.favoritePlayer || '',
+  }
 }
 
 export async function saveUserProfile(user, profile) {
@@ -190,6 +227,15 @@ export async function saveUserProfile(user, profile) {
 
     try {
       await firestoreApi.setDoc(userRef, profileUpdate, { merge: true })
+      await firestoreApi.setDoc(firestoreApi.doc(firebaseDb, 'publicProfiles', user.uid), {
+        userId: user.uid,
+        username: usernameReserved ? username : previousUsername,
+        displayName: usernameReserved ? username : previousUsername,
+        photoURL: user.photoURL || '',
+        favoriteFranchise: nextProfile.favoriteFranchise,
+        favoritePlayer: nextProfile.favoritePlayer,
+        updatedAt: firestoreApi.serverTimestamp(),
+      }, { merge: true })
     } catch (error) {
       if (!isPermissionError(error)) throw error
       const localProfile = saveLocalProfile(

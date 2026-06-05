@@ -121,6 +121,46 @@ export async function listUserResults(userId) {
   )
 }
 
+export async function listPublicUserResults(userId) {
+  if (!userId) return { auction: [], dreamTeam: [], quiz: [], post: [] }
+
+  const publicTypes = Object.entries(collectionNames).filter(([type]) => type !== 'favorite')
+
+  if (hasFirebaseConfig && firebaseDb) {
+    const entries = await Promise.all(
+      publicTypes.map(async ([type, name]) => {
+        try {
+          const q = firestoreApi.query(
+            firestoreApi.collection(firebaseDb, name),
+            firestoreApi.where('userId', '==', userId),
+            firestoreApi.where('visibility', '==', 'public'),
+            firestoreApi.limit(30),
+          )
+          const snap = await firestoreApi.getDocs(q)
+          const items = snap.docs
+            .map(normalizeDoc)
+            .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+          return [type, items]
+        } catch (error) {
+          console.warn(`Unable to load public ${name}`, error)
+          return [type, []]
+        }
+      }),
+    )
+    return Object.fromEntries(entries)
+  }
+
+  const store = readLocalStore()
+  return Object.fromEntries(
+    publicTypes.map(([type, name]) => [
+      type,
+      (store[name] ?? [])
+        .filter((item) => item.userId === userId && item.visibility === 'public')
+        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))),
+    ]),
+  )
+}
+
 export async function getSharedResult(type, id, userId = '') {
   const name = collectionNames[type]
   if (!name || !id) return null

@@ -139,6 +139,31 @@ const retainedMarketValueCr = {
   'MS Dhoni': 4,
 }
 
+const recentFormRatings = {
+  'Virat Kohli': 98,
+  'Sai Sudharsan': 97,
+  'Shubman Gill': 94,
+  'Rajat Patidar': 93,
+  'Suryakumar Yadav': 92,
+  'Yashasvi Jaiswal': 91,
+  'Abhishek Sharma': 91,
+  'Travis Head': 90,
+  'Rishabh Pant': 89,
+  'Shreyas Iyer': 89,
+  'Jasprit Bumrah': 96,
+  'Varun Chakaravarthy': 94,
+  'Prasidh Krishna': 91,
+  'Arshdeep Singh': 90,
+  'Josh Hazlewood': 90,
+  'Yuzvendra Chahal': 88,
+  'Rashid Khan': 88,
+  'Ravindra Jadeja': 88,
+  'Sunil Narine': 88,
+  'Hardik Pandya': 87,
+  'Bhuvneshwar Kumar': 86,
+  'Phil Salt': 86,
+}
+
 export const initialPurse = 120
 export const maxSquadSize = 18
 export const maxOverseasPlayers = 8
@@ -183,6 +208,46 @@ function getBasePrice(name, overseas, anchorValue) {
   return marqueePlayers.has(name) ? 2 : overseas ? 1.5 : 1
 }
 
+function getAuctionCategory(player) {
+  if (player.role === 'bowler') return 'bowler'
+  if (player.role === 'allrounder') return 'allrounder'
+  return 'batter'
+}
+
+function shufflePlayers(players) {
+  return players
+    .map((player) => ({ player, sortKey: Math.random() }))
+    .sort((left, right) => left.sortKey - right.sortKey)
+    .map(({ player }) => player)
+}
+
+export function createAuctionPlayerQueue(players) {
+  const categoryOrder = ['batter', 'bowler', 'allrounder']
+
+  return categoryOrder.flatMap((category) => shufflePlayers(players.filter((player) => getAuctionCategory(player) === category)))
+}
+
+function getRecentFormRating(name, formRating, salaryAnchor, recentMarketValue) {
+  const directRating = recentFormRatings[name]
+  if (directRating) return directRating
+
+  const salarySignal = salaryAnchor?.salaryCr ?? recentMarketValue
+  if (salarySignal >= 16) return Math.min(99, formRating + 14)
+  if (salarySignal >= 10) return Math.min(96, formRating + 10)
+  if (salarySignal >= 5) return Math.min(92, formRating + 6)
+  if (salaryAnchor?.status?.toLowerCase().includes('2026 auction sold')) return Math.min(90, formRating + 8)
+  return formRating
+}
+
+function getRecentFormMultiplier(player) {
+  if (!player.recentFormRating) return 1
+  if (player.recentFormRating >= 94) return 1.12
+  if (player.recentFormRating >= 90) return 1.08
+  if (player.recentFormRating >= 86) return 1.05
+  if (player.recentFormRating >= 80) return 1.02
+  return 1
+}
+
 export function createAuctionPlayers(iplTeams, featuredAnimations = {}, cricketerProfiles = []) {
   const profileNames = new Set(cricketerProfiles.map((profile) => profile.name))
   const featuredNames = new Set(Object.values(featuredAnimations).map((player) => player.name))
@@ -213,6 +278,7 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
       const estimatedMarketValue = recentMarketValue
         ? getSalaryAnchoredMarketValue(recentMarketValue, ratingMarketValue, basePrice)
         : ratingMarketValue
+      const recentFormRating = getRecentFormRating(name, formRating, salaryAnchor, recentMarketValue)
 
       byName.set(name, {
         id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
@@ -228,19 +294,16 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
         salaryAnchor,
         starRating,
         formRating,
+        recentFormRating,
         legacyRating,
         overseas,
         hasCareerStory,
-        summary: `${roleLabel} for ${team.shortName} with a ${starRating} star rating and ${formRating} form rating.`,
+        summary: `${roleLabel} for ${team.shortName} with a ${starRating} star rating and ${recentFormRating} recent form rating.`,
       })
     })
   })
 
-  return [...byName.values()].sort((left, right) => {
-    if (marqueePlayers.has(left.name) && !marqueePlayers.has(right.name)) return -1
-    if (!marqueePlayers.has(left.name) && marqueePlayers.has(right.name)) return 1
-    return right.estimatedMarketValue - left.estimatedMarketValue || left.name.localeCompare(right.name)
-  })
+  return [...byName.values()]
 }
 
 export function createAuctionTeams(iplTeams, userTeamId) {
@@ -283,9 +346,10 @@ export function evaluateBotInterest(team, player, currentBid, scarcity = 1) {
   const nationalityScore = player.overseas ? priorities.overseas ?? 1 : priorities.indianCore ?? 1
   const valueScore = valueGap >= 2 ? priorities.value ?? 1 : 1
   const riskScore = valueGap < -2 ? priorities.risk ?? 1 : 1
-  const starPower = player.starRating * 0.38 + player.formRating * 0.3 + player.legacyRating * 0.26
+  const recentFormMultiplier = getRecentFormMultiplier(player)
+  const starPower = player.starRating * 0.34 + player.formRating * 0.22 + player.recentFormRating * 0.18 + player.legacyRating * 0.22
 
-  return starPower * roleScore * nationalityScore * valueScore * riskScore * youthScore * roleNeed * overseasPressure * pursePressure * scarcity
+  return starPower * roleScore * nationalityScore * valueScore * riskScore * youthScore * roleNeed * overseasPressure * pursePressure * scarcity * recentFormMultiplier
 }
 
 function getBotBidCeiling(team, player) {
@@ -300,7 +364,8 @@ function getBotBidCeiling(team, player) {
           ? 1.03
           : 1
   const starPremium = marqueePlayers.has(player.name) || player.recentMarketValue >= 12 ? 1.06 : 1
-  const ceiling = player.estimatedMarketValue * riskMultiplier * rolePremium * starPremium
+  const recentFormPremium = getRecentFormMultiplier(player)
+  const ceiling = player.estimatedMarketValue * riskMultiplier * rolePremium * starPremium * recentFormPremium
   const slotsLeft = Math.max(1, maxSquadSize - team.squad.length)
   const reserveForMinimumBuys = Math.max(0, slotsLeft - 1) * 0.3
   const spendablePurse = Math.max(0, team.purse - reserveForMinimumBuys)

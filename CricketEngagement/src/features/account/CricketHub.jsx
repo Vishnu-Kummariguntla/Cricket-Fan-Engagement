@@ -10,6 +10,13 @@ const labels = {
   post: 'Fan Posts',
 }
 
+const singularLabels = {
+  auction: 'auction result',
+  dreamTeam: 'dream team',
+  quiz: 'quiz result',
+  post: 'fan post',
+}
+
 function itemTitle(type, item) {
   if (type === 'auction') return `${item.data.userFranchise} auction · ${item.data.grade}`
   if (type === 'dreamTeam') return `${item.data.teamIdentity} · ${item.data.dynastyScore}`
@@ -151,11 +158,9 @@ function SavedResultCard({ item, onDelete, onVisibilityChange, type }) {
           <option value="public">Public</option>
         </select>
         {item.visibility === 'public' && <a href={sharePath}>Share Link</a>}
-        {type === 'post' && (
-          <button className="delete-post-button" onClick={() => onDelete(type, item.id)} type="button">
-            Delete Post
-          </button>
-        )}
+        <button className="delete-result-button" onClick={() => onDelete(type, item.id)} type="button">
+          Delete
+        </button>
       </div>
     </article>
   )
@@ -195,17 +200,17 @@ export default function CricketHub({ onNavigate }) {
     }
   }
 
-  const deleteSavedPost = async (type, id) => {
-    if (type !== 'post') return
-    const confirmed = window.confirm('Delete this fan post? This removes it from My Cricket Hub and the Network feed.')
+  const deleteSavedItem = async (type, id) => {
+    const label = singularLabels[type] ?? 'saved item'
+    const confirmed = window.confirm(`Delete this ${label}? This removes it from My Cricket Hub${type === 'post' ? ' and the Network feed' : ''}.`)
     if (!confirmed) return
 
     try {
       await deleteResult(type, id, user.uid)
       setResults(await listUserResults(user.uid))
-      setLoadStatus('Post deleted.')
+      setLoadStatus(`${label.charAt(0).toUpperCase()}${label.slice(1)} deleted.`)
     } catch (error) {
-      setLoadStatus(error?.code === 'permission-denied' ? 'Firestore blocked this delete. Check published rules.' : 'Post could not be deleted.')
+      setLoadStatus(error?.code === 'permission-denied' ? 'Firestore blocked this delete. Check published rules.' : `${label.charAt(0).toUpperCase()}${label.slice(1)} could not be deleted.`)
     }
   }
 
@@ -241,7 +246,7 @@ export default function CricketHub({ onNavigate }) {
             </div>
             {(results[type]?.length ?? 0) ? (
               results[type].map((item) => (
-                <SavedResultCard item={item} key={item.id} onDelete={deleteSavedPost} onVisibilityChange={changeVisibility} type={type} />
+                <SavedResultCard item={item} key={item.id} onDelete={deleteSavedItem} onVisibilityChange={changeVisibility} type={type} />
               ))
             ) : (
               <p className="hub-empty">Nothing saved yet.</p>

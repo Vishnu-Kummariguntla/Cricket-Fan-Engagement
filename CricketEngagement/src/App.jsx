@@ -21,6 +21,7 @@ import AuthModal from './features/account/AuthModal'
 import { AuthProvider, useAuth } from './features/account/AuthProvider'
 import CricketHub from './features/account/CricketHub'
 import ProfilePage from './features/account/ProfilePage'
+import PublicProfilePage from './features/account/PublicProfilePage'
 import SharePage from './features/account/SharePage'
 import SaveResultControls from './features/account/SaveResultControls'
 import NetworkPage from './features/network/NetworkPage'
@@ -1818,13 +1819,23 @@ function App() {
       return 'profile'
     }
 
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/profile/')) {
+      return 'publicProfile'
+    }
+
     if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
       return 'share'
     }
 
     return 'home'
   }
+  const getInitialNetworkTab = () => {
+    if (typeof window === 'undefined') return 'create'
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    return ['create', 'feed', 'messages'].includes(tab) ? tab : 'create'
+  }
   const [activeView, setActiveView] = useState(getInitialView)
+  const [networkTab, setNetworkTab] = useState(getInitialNetworkTab)
   const frame = usePlayback()
   const favoriteTeam = useMemo(() => (
     !authLoading && user?.favoriteFranchise
@@ -1842,6 +1853,8 @@ function App() {
     }
 
     const playerQuery = options.player ? `?player=${getPlayerSlug(options.player)}` : ''
+    const profileUserId = options.userId ? encodeURIComponent(options.userId) : ''
+    const networkTab = options.tab ? `?tab=${encodeURIComponent(options.tab)}` : ''
     const path =
       view === 'fan'
         ? '/fan-test'
@@ -1856,19 +1869,25 @@ function App() {
                 : view === 'saved'
                   ? '/hub'
                   : view === 'network'
-                    ? '/network'
+                  ? `/network${networkTab}`
                   : view === 'profile'
                     ? '/profile'
+                    : view === 'publicProfile'
+                      ? `/profile/${profileUserId}`
                     : '/'
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', path)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    if (view === 'network') {
+      setNetworkTab(options.tab || 'create')
     }
     setActiveView(view)
   }
 
   useEffect(() => {
     const handlePopState = () => {
+      setNetworkTab(getInitialNetworkTab())
       setActiveView(
         window.location.pathname === '/fan-test'
           ? 'fan'
@@ -1886,6 +1905,8 @@ function App() {
                       ? 'network'
                       : window.location.pathname === '/profile'
                         ? 'profile'
+                        : window.location.pathname.startsWith('/profile/')
+                          ? 'publicProfile'
                         : window.location.pathname.startsWith('/share/')
                           ? 'share'
                           : 'home',
@@ -1978,7 +1999,9 @@ function App() {
           active={activeView === 'network'}
           label="Network"
           items={[
-            { label: 'Fan Network', active: activeView === 'network', onClick: () => changeView('network') },
+            { label: 'Create Post', active: activeView === 'network' && networkTab === 'create', onClick: () => changeView('network', { tab: 'create' }) },
+            { label: 'View Posts', active: activeView === 'network' && networkTab === 'feed', onClick: () => changeView('network', { tab: 'feed' }) },
+            { label: 'Messages', active: activeView === 'network' && networkTab === 'messages', onClick: () => changeView('network', { tab: 'messages' }) },
           ]}
         />
         <AccountNav activeView={activeView} onNavigate={changeView} />
@@ -1995,11 +2018,13 @@ function App() {
       ) : activeView === 'fan' ? (
         <FanPersonalityTest onNavigate={changeView} />
       ) : activeView === 'network' ? (
-        <NetworkPage />
+        <NetworkPage initialTab={networkTab} onNavigate={changeView} />
       ) : activeView === 'saved' ? (
         <CricketHub onNavigate={changeView} />
       ) : activeView === 'profile' ? (
         <ProfilePage />
+      ) : activeView === 'publicProfile' ? (
+        <PublicProfilePage />
       ) : activeView === 'share' ? (
         <SharePage />
       ) : (

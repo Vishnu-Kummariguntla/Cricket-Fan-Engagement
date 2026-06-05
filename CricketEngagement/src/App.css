@@ -2190,6 +2190,9 @@ html {
 .share-card a,
 .profile-card button {
   min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 8px;
   padding: 0 14px;
@@ -2208,13 +2211,13 @@ html {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.visibility-controls .delete-post-button {
+.visibility-controls .delete-result-button {
   color: #fecdd3;
   background: rgba(239, 68, 68, 0.14);
 }
 
-.visibility-controls .delete-post-button:hover,
-.visibility-controls .delete-post-button:focus-visible {
+.visibility-controls .delete-result-button:hover,
+.visibility-controls .delete-result-button:focus-visible {
   color: #fff;
   background: rgba(239, 68, 68, 0.3);
 }
@@ -2427,7 +2430,7 @@ html {
 .network-tabs {
   max-width: 1180px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0 auto 16px;
   padding: 6px;
@@ -2461,9 +2464,30 @@ html {
   padding: 16px;
 }
 
+.network-section-heading {
+  display: grid;
+  gap: 5px;
+}
+
+.network-section-heading > span {
+  color: #f7c948;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.network-section-heading > strong {
+  color: #fff;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
 .network-composer input,
 .network-composer textarea,
-.network-replies input {
+.network-replies input,
+.network-user-search input,
+.network-message-form input {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
@@ -2535,8 +2559,13 @@ html {
 .network-composer button,
 .network-replies button,
 .network-image-preview button,
-.network-reactions button {
+.network-reactions button,
+.network-post-social-actions button,
+.network-message-form button {
   min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 8px;
   padding: 0 12px;
@@ -2572,8 +2601,23 @@ html {
 
 .network-post-author {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 6px 4px 0;
+  text-align: left;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.network-post-author > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
 }
 
 .network-post-author > span {
@@ -2585,12 +2629,51 @@ html {
   color: #071018;
   background: #e5e7eb;
   font-weight: 1000;
+  overflow: hidden;
+}
+
+.network-post-author > span img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.network-post-author:hover strong,
+.network-post-author:focus-visible strong {
+  color: #f7c948;
+}
+
+.network-post-social-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.42);
+}
+
+.network-post-social-actions button {
+  min-height: 34px;
+  color: #071018;
+  background: #f7c948;
+}
+
+.network-post-social-actions span {
+  color: #c3cdea;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .network-post-author strong,
 .network-post-copy h2,
 .network-reply strong {
+  display: block;
+  overflow: hidden;
   color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .network-post-author small,
@@ -2599,6 +2682,12 @@ html {
   color: #c3cdea;
   font-weight: 800;
   line-height: 1.45;
+}
+
+.network-post-author small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.82;
 }
 
 .network-post-copy h2 {
@@ -2626,8 +2715,26 @@ html {
 }
 
 .network-reactions button {
+  gap: 6px;
   color: #dbe5ff;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.network-reactions button b {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.network-reactions button span {
+  min-width: 22px;
+  min-height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #071018;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+  font-weight: 1000;
 }
 
 .network-reactions button.active {
@@ -2640,6 +2747,182 @@ html {
   gap: 10px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.network-messaging-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.network-message-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.38fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.network-user-search,
+.network-message-thread {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(16px);
+}
+
+.network-user-search label {
+  display: grid;
+  gap: 7px;
+  color: #f7c948;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.network-user-search > div {
+  display: grid;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.network-user-search button,
+.network-message-recipient {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  color: #fff;
+  background: rgba(5, 8, 18, 0.52);
+  font: inherit;
+  text-align: left;
+}
+
+.network-user-search button {
+  cursor: pointer;
+}
+
+.network-user-search button.active,
+.network-user-search button:hover,
+.network-user-search button:focus-visible {
+  border-color: color-mix(in srgb, #f7c948 62%, rgba(255, 255, 255, 0.12));
+  background: rgba(247, 201, 72, 0.12);
+}
+
+.network-user-search button > span,
+.network-message-recipient > span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #071018;
+  background: #e5e7eb;
+  font-size: 12px;
+  font-weight: 1000;
+  overflow: hidden;
+}
+
+.network-user-search img,
+.network-message-recipient img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.network-user-search strong,
+.network-message-recipient strong {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-user-search small,
+.network-message-recipient small,
+.network-user-search p,
+.network-empty-thread,
+.network-message-placeholder p {
+  margin: 0;
+  color: #c3cdea;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.network-message-list {
+  min-height: 340px;
+  max-height: 520px;
+  display: grid;
+  align-content: end;
+  gap: 8px;
+  overflow: auto;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.38);
+}
+
+.network-message-list p {
+  width: fit-content;
+  max-width: min(520px, 86%);
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #dbe5ff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.network-message-list p.mine {
+  justify-self: end;
+  color: #071018;
+  background: #f7c948;
+}
+
+.network-message-list p span {
+  overflow-wrap: anywhere;
+  font-weight: 850;
+}
+
+.network-message-list p small {
+  font-size: 10px;
+  opacity: 0.72;
+}
+
+.network-message-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.network-message-placeholder {
+  min-height: 320px;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.network-message-placeholder span {
+  color: #f7c948;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.network-message-placeholder strong {
+  color: #fff;
+  font-size: 24px;
 }
 
 .network-reply {
@@ -2922,6 +3205,113 @@ html {
   color: #c3cdea;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.public-profile-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  text-align: left;
+}
+
+.public-profile-avatar {
+  width: 86px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--profile-accent, #f7c948) 52%, rgba(255, 255, 255, 0.14));
+  border-radius: 50%;
+  color: #071018;
+  background: linear-gradient(135deg, var(--profile-accent, #f7c948), var(--profile-secondary, #22d3ee));
+  font-size: 28px;
+  font-weight: 1000;
+  overflow: hidden;
+}
+
+.public-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-profile-team-logo {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.public-profile-favorites {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.public-profile-favorites p {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.42);
+}
+
+.public-profile-favorites p > span {
+  color: color-mix(in srgb, var(--profile-accent, #f7c948) 78%, #fff);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.public-profile-favorites p > strong {
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.public-profile-summary {
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 auto 18px;
+}
+
+.public-profile-summary div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--profile-accent, #f7c948) 14%, transparent), rgba(255, 255, 255, 0.045)),
+    rgba(255, 255, 255, 0.055);
+}
+
+.public-profile-summary strong {
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.public-profile-summary span {
+  color: #c3cdea;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.public-result-card img {
+  width: min(320px, 100%);
+  max-height: 180px;
+  margin-top: 10px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .saved-player-list small {
@@ -5028,6 +5418,7 @@ html {
 .auction-link-button,
 .auction-results-hero button,
 .auction-results-actions-panel button,
+.auction-upcoming-panel button,
 .auction-control-buttons button,
 .auction-custom-bid button {
   border: 0;
@@ -5044,10 +5435,23 @@ html {
 }
 
 .auction-room-header button:disabled,
+.auction-upcoming-panel button:disabled,
 .auction-control-buttons button:disabled,
 .auction-custom-bid button:disabled {
   opacity: 0.46;
   cursor: not-allowed;
+}
+
+.auction-room-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.auction-room-actions button {
+  margin-left: 0;
 }
 
 .auction-room-grid {
@@ -5337,6 +5741,118 @@ html {
   display: grid;
   gap: 10px;
   padding: 12px;
+}
+
+.auction-upcoming-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--auction-accent, #f7c948) 14%, transparent), rgba(255, 255, 255, 0.045)),
+    rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(16px);
+}
+
+.auction-upcoming-panel .auction-panel-heading button {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #fff;
+  background: #272727;
+}
+
+.auction-upcoming-heading {
+  display: grid;
+  gap: 5px;
+}
+
+.auction-upcoming-heading span,
+.auction-upcoming-heading strong {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+.auction-upcoming-heading span {
+  color: var(--auction-accent, #f7c948);
+}
+
+.auction-upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.auction-upcoming-grid article {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.58);
+}
+
+.auction-upcoming-grid article > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.auction-upcoming-grid strong {
+  color: #fff;
+  font-size: 14px;
+}
+
+.auction-upcoming-grid article > div span {
+  flex: 0 0 auto;
+  color: var(--auction-accent, #f7c948);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.auction-upcoming-grid ul {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.auction-upcoming-grid li {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.auction-upcoming-grid li span {
+  overflow: hidden;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auction-upcoming-grid li small,
+.auction-upcoming-grid p {
+  margin: 0;
+  color: #b9c4df;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .auction-countdown {
@@ -5834,7 +6350,8 @@ html {
   }
 
   .network-hero,
-  .network-layout {
+  .network-layout,
+  .network-message-layout {
     grid-template-columns: 1fr;
   }
 
@@ -5903,6 +6420,20 @@ html {
   }
 
   .auction-stage-card {
+    grid-template-columns: 1fr;
+  }
+
+  .auction-room-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .auction-room-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .auction-upcoming-grid {
     grid-template-columns: 1fr;
   }
 
@@ -6792,6 +7323,9 @@ html {
   }
 
   .network-stats,
+  .public-profile-favorites,
+  .network-tabs,
+  .network-message-form,
   .network-replies form {
     grid-template-columns: 1fr;
   }

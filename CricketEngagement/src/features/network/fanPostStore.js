@@ -54,6 +54,8 @@ export async function createFanPost(user, payload) {
     userId: user.uid,
     userName: getUserName(user),
     userAvatar: user.photoURL || '',
+    userFavoriteFranchise: user.favoriteFranchise || '',
+    userFavoritePlayer: user.favoritePlayer || '',
     visibility: 'public',
     createdAt: nowIso(),
     updatedAt: nowIso(),
@@ -68,6 +70,19 @@ export async function createFanPost(user, payload) {
   }
 
   if (hasFirebaseConfig && firebaseDb) {
+    try {
+      await firestoreApi.setDoc(firestoreApi.doc(firebaseDb, 'publicProfiles', user.uid), {
+        userId: user.uid,
+        username: getUserName(user),
+        displayName: getUserName(user),
+        photoURL: user.photoURL || '',
+        favoriteFranchise: user.favoriteFranchise || '',
+        favoritePlayer: user.favoritePlayer || '',
+        updatedAt: firestoreApi.serverTimestamp(),
+      }, { merge: true })
+    } catch (error) {
+      console.warn('Unable to sync public profile for post author', error)
+    }
     const ref = await firestoreApi.addDoc(firestoreApi.collection(firebaseDb, 'fanPosts'), {
       ...post,
       createdAt: firestoreApi.serverTimestamp(),
