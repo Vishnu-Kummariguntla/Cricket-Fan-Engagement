@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../account/AuthProvider'
+import { createDebateResponse, fanDebatePrompts, listDebateResponses } from './fanDebateStore'
 import { addFanPostReply, createFanPost, listPublicFanPosts, updateFanPostReaction } from './fanPostStore'
 import { listDirectMessages, listFollowing, listNetworkUsers, sendDirectMessage, toggleFollow } from './networkSocialStore'
 
@@ -191,6 +192,70 @@ function MessagingPanel({
   )
 }
 
+function DebatePanel({
+  debateForm,
+  debateResponses,
+  onDebateForm,
+  onPrivateDebate,
+  onSelectPrompt,
+  onSubmitResponse,
+  selectedPrompt,
+}) {
+  return (
+    <section className="network-debate-panel">
+      <div className="network-section-heading">
+        <span>Fan Debates</span>
+        <strong>Pick a prompt, make your case, and challenge another fan privately.</strong>
+      </div>
+
+      <div className="network-debate-layout">
+        <aside className="network-debate-prompts">
+          {fanDebatePrompts.map((prompt) => (
+            <button className={selectedPrompt.id === prompt.id ? 'active' : ''} key={prompt.id} onClick={() => onSelectPrompt(prompt)} type="button">
+              <strong>{prompt.title}</strong>
+              <small>{prompt.context}</small>
+            </button>
+          ))}
+        </aside>
+
+        <section className="network-debate-room">
+          <div className="network-debate-current">
+            <span>Current Debate</span>
+            <strong>{selectedPrompt.title}</strong>
+            <p>{selectedPrompt.context}</p>
+          </div>
+
+          <form className="network-debate-form" onSubmit={onSubmitResponse}>
+            <input onChange={(event) => onDebateForm((current) => ({ ...current, stance: event.target.value }))} placeholder="Your answer, e.g. Virat Kohli" value={debateForm.stance} />
+            <textarea onChange={(event) => onDebateForm((current) => ({ ...current, reason: event.target.value }))} placeholder="Give your reasons. Use stats, context, pressure, conditions, or moments." rows={4} value={debateForm.reason} />
+            <button type="submit">Post Response</button>
+          </form>
+
+          <div className="network-debate-responses">
+            <span>{debateResponses.length} response{debateResponses.length === 1 ? '' : 's'}</span>
+            {debateResponses.length ? debateResponses.map((response) => (
+              <article key={response.id}>
+                <div className="network-debate-author">
+                  <span>{response.userAvatar ? <img alt={`${response.userName} avatar`} src={response.userAvatar} /> : response.userName.slice(0, 2).toUpperCase()}</span>
+                  <div>
+                    <strong>{response.userName}</strong>
+                    <small>{response.createdAt ? new Date(response.createdAt).toLocaleString() : 'Just now'}</small>
+                  </div>
+                </div>
+                <h3>{response.stance}</h3>
+                <p>{response.reason}</p>
+                <button onClick={() => onPrivateDebate(response)} type="button">Debate Privately</button>
+              </article>
+            )) : (
+              <p className="network-status">No responses yet. Start the debate.</p>
+            )}
+          </div>
+        </section>
+      </div>
+    </section>
+  )
+}
+
 export default function NetworkPage({ initialTab = 'create', onNavigate }) {
   const { openAuthModal, user } = useAuth()
   const [form, setForm] = useState({ title: '', body: '', linkedResult: '' })
@@ -206,6 +271,9 @@ export default function NetworkPage({ initialTab = 'create', onNavigate }) {
   const [selectedMessageUser, setSelectedMessageUser] = useState(null)
   const [messages, setMessages] = useState([])
   const [messageText, setMessageText] = useState('')
+  const [selectedDebatePrompt, setSelectedDebatePrompt] = useState(fanDebatePrompts[0])
+  const [debateResponses, setDebateResponses] = useState([])
+  const [debateForm, setDebateForm] = useState({ stance: '', reason: '' })
   const canPost = Boolean(user && form.title.trim() && form.body.trim())
   const totalReactions = useMemo(() => posts.reduce((total, post) => (
     total + Object.values(post.reactions ?? {}).reduce((sum, userIds) => sum + userIds.length, 0)
@@ -226,7 +294,7 @@ export default function NetworkPage({ initialTab = 'create', onNavigate }) {
   }, [])
 
   useEffect(() => {
-    if (['create', 'feed', 'messages'].includes(initialTab)) {
+    if (['create', 'feed', 'debates', 'messages'].includes(initialTab)) {
       setActiveTab(initialTab)
     }
   }, [initialTab])
@@ -248,6 +316,13 @@ export default function NetworkPage({ initialTab = 'create', onNavigate }) {
       .then((profiles) => setMessageUsers(profiles.filter((profile) => profile.userId !== user?.uid)))
       .catch((error) => console.warn('Unable to search network users', error))
   }, [activeTab, messageSearch, user?.uid])
+
+  useEffect(() => {
+    if (activeTab !== 'debates') return
+    listDebateResponses(selectedDebatePrompt.id)
+      .then(setDebateResponses)
+      .catch((error) => console.warn('Unable to load debate responses', error))
+  }, [activeTab, selectedDebatePrompt.id])
 
   useEffect(() => {
     if (!user?.uid || !selectedMessageUser?.userId) {
@@ -359,6 +434,38 @@ export default function NetworkPage({ initialTab = 'create', onNavigate }) {
     setMessageText('')
   }
 
+  const submitDebateResponse = async (event) => {
+    event.preventDefault()
+    if (!user) {
+      openAuthModal('signIn')
+      return
+    }
+
+    const response = await createDebateResponse(user, selectedDebatePrompt, debateForm)
+    if (response) {
+      setDebateResponses((current) => [response, ...current])
+      setDebateForm({ stance: '', reason: '' })
+    }
+  }
+
+  const startPrivateDebate = (response) => {
+    if (!user) {
+      openAuthModal('signIn')
+      return
+    }
+    if (response.userId === user.uid) return
+
+    const targetUser = {
+      userId: response.userId,
+      displayName: response.userName,
+      username: response.userName,
+      photoURL: response.userAvatar || '',
+    }
+    setSelectedMessageUser(targetUser)
+    setMessageText(`Debate: ${response.promptTitle} — I saw your answer "${response.stance}" and `)
+    onNavigate('network', { tab: 'messages' })
+  }
+
   return (
     <section className="network-page pointer-reactive">
       <div className="network-hero">
@@ -408,6 +515,16 @@ export default function NetworkPage({ initialTab = 'create', onNavigate }) {
               <FanPostCard followingIds={followingIds} key={post.id} onFollow={followUser} onOpenProfile={openPublicProfile} onReact={reactToPost} onReply={replyToPost} post={post} user={user} />
             ))}
           </div>
+        ) : activeTab === 'debates' ? (
+          <DebatePanel
+            debateForm={debateForm}
+            debateResponses={debateResponses}
+            onDebateForm={setDebateForm}
+            onPrivateDebate={startPrivateDebate}
+            onSelectPrompt={setSelectedDebatePrompt}
+            onSubmitResponse={submitDebateResponse}
+            selectedPrompt={selectedDebatePrompt}
+          />
         ) : (
           <MessagingPanel
             messages={messages}

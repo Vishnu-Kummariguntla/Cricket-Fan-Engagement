@@ -1832,7 +1832,7 @@ function App() {
   const getInitialNetworkTab = () => {
     if (typeof window === 'undefined') return 'create'
     const tab = new URLSearchParams(window.location.search).get('tab')
-    return ['create', 'feed', 'messages'].includes(tab) ? tab : 'create'
+    return ['create', 'feed', 'debates', 'messages'].includes(tab) ? tab : 'create'
   }
   const [activeView, setActiveView] = useState(getInitialView)
   const [networkTab, setNetworkTab] = useState(getInitialNetworkTab)
@@ -2001,6 +2001,7 @@ function App() {
           items={[
             { label: 'Create Post', active: activeView === 'network' && networkTab === 'create', onClick: () => changeView('network', { tab: 'create' }) },
             { label: 'View Posts', active: activeView === 'network' && networkTab === 'feed', onClick: () => changeView('network', { tab: 'feed' }) },
+            { label: 'Fan Debates', active: activeView === 'network' && networkTab === 'debates', onClick: () => changeView('network', { tab: 'debates' }) },
             { label: 'Messages', active: activeView === 'network' && networkTab === 'messages', onClick: () => changeView('network', { tab: 'messages' }) },
           ]}
         />

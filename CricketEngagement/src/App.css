@@ -2487,7 +2487,9 @@ html {
 .network-composer textarea,
 .network-replies input,
 .network-user-search input,
-.network-message-form input {
+.network-message-form input,
+.network-debate-form input,
+.network-debate-form textarea {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
@@ -2561,7 +2563,9 @@ html {
 .network-image-preview button,
 .network-reactions button,
 .network-post-social-actions button,
-.network-message-form button {
+.network-message-form button,
+.network-debate-form button,
+.network-debate-responses article > button {
   min-height: 40px;
   display: inline-flex;
   align-items: center;
@@ -2923,6 +2927,152 @@ html {
 .network-message-placeholder strong {
   color: #fff;
   font-size: 24px;
+}
+
+.network-debate-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.network-debate-layout {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.42fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.network-debate-prompts,
+.network-debate-room {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.network-debate-prompts button,
+.network-debate-current,
+.network-debate-responses article {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(16px);
+}
+
+.network-debate-prompts button {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.network-debate-prompts button.active,
+.network-debate-prompts button:hover,
+.network-debate-prompts button:focus-visible {
+  border-color: color-mix(in srgb, #f7c948 62%, rgba(255, 255, 255, 0.12));
+  background: rgba(247, 201, 72, 0.12);
+}
+
+.network-debate-prompts strong,
+.network-debate-current strong,
+.network-debate-responses h3 {
+  color: #fff;
+  line-height: 1.2;
+}
+
+.network-debate-prompts small,
+.network-debate-current p,
+.network-debate-responses p {
+  margin: 0;
+  color: #c3cdea;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.network-debate-current {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.network-debate-current > span,
+.network-debate-responses > span {
+  color: #f7c948;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.network-debate-form {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(5, 8, 18, 0.42);
+}
+
+.network-debate-form textarea {
+  resize: vertical;
+}
+
+.network-debate-form button,
+.network-debate-responses article > button {
+  width: fit-content;
+  color: #071018;
+  background: #f7c948;
+}
+
+.network-debate-responses {
+  display: grid;
+  gap: 10px;
+}
+
+.network-debate-responses article {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.network-debate-author {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.network-debate-author > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #071018;
+  background: #e5e7eb;
+  font-size: 12px;
+  font-weight: 1000;
+  overflow: hidden;
+}
+
+.network-debate-author img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.network-debate-author strong {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+}
+
+.network-debate-author small {
+  display: block;
+  color: #c3cdea;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .network-reply {
@@ -6351,7 +6501,8 @@ html {
 
   .network-hero,
   .network-layout,
-  .network-message-layout {
+  .network-message-layout,
+  .network-debate-layout {
     grid-template-columns: 1fr;
   }
 
