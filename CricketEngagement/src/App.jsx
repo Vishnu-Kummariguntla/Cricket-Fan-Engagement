@@ -610,7 +610,6 @@ function shouldUseLocalSeasonImage(season, imageType) {
 }
 
 function IplArchiveImage({ alt, imageType, season }) {
-  const imageMeta = getSeasonImageMeta(season, imageType)
   const localPath = getSeasonImage(season, imageType)
   const subject = getArchiveImageSubject(season, imageType)
   const title = wikipediaTitleOverrides[subject] ?? subject
@@ -1780,6 +1779,252 @@ function FanPersonalityTest({ onNavigate }) {
   )
 }
 
+function normalizeTeamName(value) {
+  return value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function findTeamByName(name) {
+  const normalizedName = normalizeTeamName(name)
+
+  return iplTeams.find((team) => {
+    const candidates = [team.name, team.shortName, team.id]
+    if (team.name.includes('Bengaluru')) candidates.push(team.name.replace('Bengaluru', 'Bangalore'))
+    if (team.name.includes('Punjab Kings')) candidates.push('Kings XI Punjab', 'KXIP')
+    if (team.name.includes('Delhi Capitals')) candidates.push('Delhi Daredevils')
+
+    return candidates.some((candidate) => normalizeTeamName(candidate) === normalizedName)
+  })
+}
+
+const historicTeamVisuals = {
+  'Deccan Chargers': {
+    accent: '#0d2b5c',
+    logo: '/images/logos/deccan-chargers.svg',
+  },
+}
+
+const capWinnerTeams = {
+  orange: {
+    2008: 'Punjab Kings',
+    2009: 'Chennai Super Kings',
+    2010: 'Mumbai Indians',
+    2011: 'Royal Challengers Bengaluru',
+    2012: 'Royal Challengers Bengaluru',
+    2013: 'Chennai Super Kings',
+    2014: 'Kolkata Knight Riders',
+    2015: 'Sunrisers Hyderabad',
+    2016: 'Royal Challengers Bengaluru',
+    2017: 'Sunrisers Hyderabad',
+    2018: 'Sunrisers Hyderabad',
+    2019: 'Sunrisers Hyderabad',
+    2020: 'Punjab Kings',
+    2021: 'Chennai Super Kings',
+    2022: 'Rajasthan Royals',
+    2023: 'Gujarat Titans',
+    2024: 'Royal Challengers Bengaluru',
+    2025: 'Gujarat Titans',
+    2026: 'Rajasthan Royals',
+  },
+  purple: {
+    2008: 'Rajasthan Royals',
+    2009: 'Deccan Chargers',
+    2010: 'Deccan Chargers',
+    2011: 'Mumbai Indians',
+    2012: 'Delhi Capitals',
+    2013: 'Chennai Super Kings',
+    2014: 'Chennai Super Kings',
+    2015: 'Chennai Super Kings',
+    2016: 'Sunrisers Hyderabad',
+    2017: 'Sunrisers Hyderabad',
+    2018: 'Punjab Kings',
+    2019: 'Chennai Super Kings',
+    2020: 'Delhi Capitals',
+    2021: 'Royal Challengers Bengaluru',
+    2022: 'Rajasthan Royals',
+    2023: 'Gujarat Titans',
+    2024: 'Punjab Kings',
+    2025: 'Gujarat Titans',
+    2026: 'Punjab Kings',
+  },
+}
+
+function getTeamVisual(teamName) {
+  const historic = historicTeamVisuals[teamName]
+  if (historic) return historic
+
+  const team = findTeamByName(teamName)
+  if (!team) return { accent: '#f7c948', logo: '' }
+
+  return {
+    accent: team.colors.accent,
+    logo: teamLogoPaths[team.id],
+  }
+}
+
+function getCapChartData(seasons, capType) {
+  const metric = capType === 'orange' ? 'runs' : 'wickets'
+  const capKey = capType === 'orange' ? 'orangeCap' : 'purpleCap'
+
+  return seasons.map((season, index) => {
+    const value = season[capKey][metric]
+    const teamName = capWinnerTeams[capType][season.year] ?? 'IPL'
+
+    return {
+      index,
+      metric,
+      player: season[capKey].winner,
+      teamName,
+      value,
+      year: season.year,
+      visual: getTeamVisual(teamName),
+    }
+  })
+}
+
+function StatsPointChart({ data, label, tone }) {
+  const maxValue = Math.max(...data.map((item) => item.value))
+  const yMax = label === 'Wickets' ? Math.ceil(maxValue / 5) * 5 : Math.ceil(maxValue / 100) * 100
+  const yTicks = [yMax, Math.round(yMax * 0.75), Math.round(yMax * 0.5), Math.round(yMax * 0.25), 0]
+  const points = data.map((item, index) => {
+    const x = data.length === 1 ? 50 : (index / (data.length - 1)) * 100
+    const y = 100 - (item.value / yMax) * 100
+
+    return { ...item, x, y }
+  })
+  const pointPath = points.map((point) => `${point.x},${point.y}`).join(' ')
+
+  return (
+    <div className={`stats-point-chart ${tone}`}>
+      <div className="chart-y-label">{label}</div>
+      <div className="chart-y-axis" aria-hidden="true">
+        {yTicks.map((tick) => (
+          <span key={tick}>{tick}</span>
+        ))}
+      </div>
+      <div className="chart-plot">
+        <svg aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <polyline points={pointPath} />
+        </svg>
+        {points.map((point) => (
+          <button
+            aria-label={`${point.year}: ${point.player}, ${point.value} ${point.metric} for ${point.teamName}`}
+            className="chart-point"
+            key={point.year}
+            style={{ '--point-x': `${point.x}%`, '--point-y': `${point.y}%`, '--point-accent': point.visual.accent }}
+            type="button"
+          >
+            <span className="chart-tooltip">
+              <strong>{point.year}</strong>
+              <b>{point.player}</b>
+              <small>{point.value} {point.metric} · {point.teamName}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="chart-x-axis" aria-hidden="true" style={{ '--chart-point-count': points.length }}>
+        {points.map((point) => (
+          <span key={point.year}>{point.year}</span>
+        ))}
+      </div>
+      <div className="chart-x-label">Year</div>
+    </div>
+  )
+}
+
+function IplStatsPage() {
+  const seasons = iplSeasonTimeline
+  const championCounts = seasons.reduce((counts, season) => ({
+    ...counts,
+    [season.champion]: (counts[season.champion] ?? 0) + 1,
+  }), {})
+  const championRows = Object.entries(championCounts)
+    .map(([teamName, titles]) => ({ teamName, titles, team: findTeamByName(teamName) }))
+    .sort((left, right) => right.titles - left.titles || left.teamName.localeCompare(right.teamName))
+  const maxTitles = Math.max(...championRows.map((row) => row.titles))
+  const topTitleTeams = championRows.filter((row) => row.titles === maxTitles)
+  const topOrange = [...seasons].sort((left, right) => right.orangeCap.runs - left.orangeCap.runs)[0]
+  const topPurple = [...seasons].sort((left, right) => right.purpleCap.wickets - left.purpleCap.wickets)[0]
+  const mostRecentSeason = seasons.at(-1)
+  const orangeCapData = getCapChartData(seasons, 'orange')
+  const purpleCapData = getCapChartData(seasons, 'purple')
+
+  return (
+    <section className="ipl-stats-page">
+      <div className="ipl-stats-hero">
+        <span>Cricket Info</span>
+        <h1>IPL Stats Dashboard</h1>
+        <p>Season outcomes, title dynasties, Orange Cap peaks, and Purple Cap peaks in one visual board.</p>
+      </div>
+
+      <div className="ipl-stat-kpis">
+        <article>
+          <span>Seasons tracked</span>
+          <strong>{seasons.length}</strong>
+          <small>{seasons[0].year}-{mostRecentSeason.year}</small>
+        </article>
+        <article>
+          <span>Most titles</span>
+          <strong>{championRows[0].titles}</strong>
+          <small>{topTitleTeams.map((row) => row.teamName).join(' and ')} are tied</small>
+        </article>
+        <article>
+          <span>Highest Orange Cap</span>
+          <strong>{topOrange.orangeCap.runs}</strong>
+          <small>{topOrange.orangeCap.winner}, {topOrange.year}</small>
+        </article>
+        <article>
+          <span>Highest Purple Cap</span>
+          <strong>{topPurple.purpleCap.wickets}</strong>
+          <small>{topPurple.purpleCap.winner}, {topPurple.year}</small>
+        </article>
+      </div>
+
+      <div className="ipl-stats-grid">
+        <article className="ipl-stat-card title-race-card">
+          <div className="stats-card-heading">
+            <span>Championships</span>
+            <strong>Titles by franchise</strong>
+          </div>
+          <div className="stats-bars">
+            {championRows.map(({ teamName, titles, team }) => {
+              const visual = team ? { accent: team.colors.accent, logo: teamLogoPaths[team.id] } : getTeamVisual(teamName)
+
+              return (
+                <div className="stat-bar-row" key={teamName} style={{ '--row-accent': visual.accent }}>
+                  <div className="stat-team-label">
+                    {visual.logo && <img alt="" src={visual.logo} />}
+                    <span>{teamName}</span>
+                  </div>
+                  <div className="stat-bar-track">
+                    <i style={{ width: `${(titles / maxTitles) * 100}%` }} />
+                  </div>
+                  <strong>{titles}</strong>
+                </div>
+              )
+            })}
+          </div>
+        </article>
+
+        <article className="ipl-stat-card">
+          <div className="stats-card-heading">
+            <span>Orange Cap</span>
+            <strong>Runs by season</strong>
+          </div>
+          <StatsPointChart data={orangeCapData} label="Runs" tone="orange" />
+        </article>
+
+        <article className="ipl-stat-card">
+          <div className="stats-card-heading">
+            <span>Purple Cap</span>
+            <strong>Wickets by season</strong>
+          </div>
+          <StatsPointChart data={purpleCapData} label="Wickets" tone="purple" />
+        </article>
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const { authLoading, openAuthModal, toast, user } = useAuth()
   const backdropRef = useRef(null)
@@ -1805,6 +2050,10 @@ function App() {
 
     if (typeof window !== 'undefined' && window.location.pathname === '/visualizations') {
       return 'visualizations'
+    }
+
+    if (typeof window !== 'undefined' && window.location.pathname === '/ipl-stats') {
+      return 'iplStats'
     }
 
     if (typeof window !== 'undefined' && ['/hub', '/saved-results'].includes(window.location.pathname)) {
@@ -1841,7 +2090,7 @@ function App() {
     !authLoading && user?.favoriteFranchise
       ? iplTeams.find((team) => team.id === user.favoriteFranchise)
       : null
-  ), [authLoading, user?.favoriteFranchise])
+  ), [authLoading, user])
   const navStyle = favoriteTeam ? {
     '--nav-team-accent': favoriteTeam.colors.accent,
     '--nav-team-secondary': favoriteTeam.colors.secondary,
@@ -1866,6 +2115,8 @@ function App() {
               ? '/auction'
               : view === 'visualizations'
                 ? `/visualizations${playerQuery}`
+                : view === 'iplStats'
+                  ? '/ipl-stats'
                 : view === 'saved'
                   ? '/hub'
                   : view === 'network'
@@ -1899,17 +2150,19 @@ function App() {
                 ? 'auction'
                 : window.location.pathname === '/visualizations'
                   ? 'visualizations'
-                  : ['/hub', '/saved-results'].includes(window.location.pathname)
-                    ? 'saved'
-                    : window.location.pathname === '/network'
-                      ? 'network'
-                      : window.location.pathname === '/profile'
-                        ? 'profile'
-                        : window.location.pathname.startsWith('/profile/')
-                          ? 'publicProfile'
-                        : window.location.pathname.startsWith('/share/')
-                          ? 'share'
-                          : 'home',
+                  : window.location.pathname === '/ipl-stats'
+                    ? 'iplStats'
+                    : ['/hub', '/saved-results'].includes(window.location.pathname)
+                      ? 'saved'
+                      : window.location.pathname === '/network'
+                        ? 'network'
+                        : window.location.pathname === '/profile'
+                          ? 'profile'
+                          : window.location.pathname.startsWith('/profile/')
+                            ? 'publicProfile'
+                            : window.location.pathname.startsWith('/share/')
+                              ? 'share'
+                              : 'home',
       )
     }
 
@@ -1988,11 +2241,12 @@ function App() {
           ]}
         />
         <NavGroup
-          active={['visualizations', 'timeline'].includes(activeView)}
+          active={['visualizations', 'timeline', 'iplStats'].includes(activeView)}
           label="Cricket Info"
           items={[
             { label: 'Visualizations', active: activeView === 'visualizations', onClick: () => changeView('visualizations') },
             { label: 'IPL Timeline', active: activeView === 'timeline', onClick: () => changeView('timeline') },
+            { label: 'IPL Stats', active: activeView === 'iplStats', onClick: () => changeView('iplStats') },
           ]}
         />
         <NavGroup
@@ -2012,6 +2266,8 @@ function App() {
         <HomePage onNavigate={changeView} />
       ) : activeView === 'timeline' ? (
         <TimelinePage />
+      ) : activeView === 'iplStats' ? (
+        <IplStatsPage />
       ) : activeView === 'dynasty' ? (
         <IplDynastyBuilder />
       ) : activeView === 'auction' ? (

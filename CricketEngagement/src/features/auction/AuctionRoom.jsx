@@ -14,7 +14,6 @@ import {
   runBotBids,
 } from './auctionEngine'
 
-const phaseOrder = ['Open bidding', 'Going once', 'Going twice']
 const bidSeconds = 8
 
 const categoryLabels = {
@@ -71,6 +70,7 @@ export default function AuctionRoom({
   const [saleBanner, setSaleBanner] = useState(null)
   const [userPassed, setUserPassed] = useState(false)
   const [showUpcomingPlayers, setShowUpcomingPlayers] = useState(false)
+  const [paused, setPaused] = useState(false)
   const saleLockRef = useRef(false)
   const soldKeysRef = useRef(new Set())
   const botTimerRef = useRef(0)
@@ -88,10 +88,11 @@ export default function AuctionRoom({
   )
   const auctionClosed = !player || userTeam.squad.length >= maxSquadSize || Boolean(saleBanner)
   const userIsHighestBidder = highestBidderId === userTeamId
-  const userCanBid = !auctionClosed && !userPassed && !userIsHighestBidder
+  const biddingFrozen = auctionClosed || paused
+  const userCanBid = !biddingFrozen && !userPassed && !userIsHighestBidder
   const currentCategory = getAuctionCategory(player)
   const nextCategoryIndex = players.findIndex((auctionPlayer, index) => index > playerIndex && getAuctionCategory(auctionPlayer) !== currentCategory)
-  const canSkipCategory = Boolean(player) && !saleBanner && nextCategoryIndex > playerIndex
+  const canSkipCategory = Boolean(player) && !saleBanner && !paused && nextCategoryIndex > playerIndex
   const upcomingByCategory = getUpcomingByCategory(players, playerIndex)
   const resetForNextPlayer = (nextTeams, soldLogEntries) => {
     const nextIndex = playerIndex + 1
@@ -107,6 +108,7 @@ export default function AuctionRoom({
     setBotThinking(false)
     setSaleBanner(null)
     setUserPassed(false)
+    setPaused(false)
     botDuelCountRef.current = 0
 
     if (nextIndex >= players.length) onFinish()
@@ -173,6 +175,13 @@ export default function AuctionRoom({
   }
 
   const applyBotRound = (startBid, nextHighestBidderId, increment, seedTeams = teams) => {
+    if (paused || saleBanner) return {
+      teams: seedTeams,
+      currentBid: startBid,
+      highestBidderId: nextHighestBidderId,
+      logEntries: [],
+    }
+
     const normalizedIncrement = increment === 0 ? 0 : getBotBidIncrement(player, startBid)
     const botResult = runBotBids({
       teams: seedTeams,
@@ -203,6 +212,8 @@ export default function AuctionRoom({
   }
 
   const scheduleBotRound = (startBid, nextHighestBidderId, increment, seedTeams = teams, delay = 900) => {
+    if (paused || saleBanner) return
+
     window.clearTimeout(botTimerRef.current)
     setBotThinking(true)
     botTimerRef.current = window.setTimeout(() => {
@@ -232,7 +243,7 @@ export default function AuctionRoom({
   }
 
   const pass = () => {
-    if (auctionClosed) return
+    if (biddingFrozen) return
     window.clearTimeout(botTimerRef.current)
     let simulatedTeams = teams
     let simulatedBid = currentBid
@@ -269,20 +280,37 @@ export default function AuctionRoom({
   }
 
   const autoBid = () => {
+    if (biddingFrozen) return
     const target = Math.min(userTeam.purse, player.estimatedMarketValue + 1)
     const increment = target - currentBid >= 1 ? 1 : 0.5
     bidAsUser(increment)
   }
 
   const submitCustomBid = () => {
+    if (biddingFrozen) return
     const nextBid = Number(customBid)
     if (!Number.isFinite(nextBid) || nextBid <= currentBid) return
     bidAsUser(Number((nextBid - currentBid).toFixed(1)))
   }
 
+  const togglePaused = () => {
+    setPaused((current) => {
+      const nextPaused = !current
+
+      if (nextPaused) {
+        window.clearTimeout(botTimerRef.current)
+        setBotThinking(false)
+        setLogEntries((currentEntries) => [`Auction paused on ${player?.name ?? 'current lot'}`, ...currentEntries].slice(0, 36))
+      } else {
+        setLogEntries((currentEntries) => [`Auction resumed`, ...currentEntries].slice(0, 36))
+      }
+
+      return nextPaused
+    })
+  }
+
   useEffect(() => {
-    if (!player || auctionClosed) return undefined
-    setCountdown(bidSeconds)
+    if (!player || auctionClosed || paused) return undefined
     saleLockRef.current = false
 
     const timer = window.setInterval(() => {
@@ -301,34 +329,34 @@ export default function AuctionRoom({
     }, 1000)
 
     return () => window.clearInterval(timer)
-  }, [playerIndex, currentBid, highestBidderId, auctionClosed])
+  }, [playerIndex, currentBid, highestBidderId, auctionClosed, paused])
 
   useEffect(() => {
-    if (!player || saleBanner || highestBidderId || botThinking) return undefined
+    if (!player || paused || saleBanner || highestBidderId || botThinking) return undefined
     const openingKey = `${playerIndex}-${player.name}`
     if (openingBotKeyRef.current === openingKey) return undefined
     openingBotKeyRef.current = openingKey
     scheduleBotRound(currentBid, '', 0, teams, 1100 + Math.round(Math.random() * 1200))
 
     return undefined
-  }, [playerIndex, player, highestBidderId, saleBanner, botThinking])
+  }, [playerIndex, player, highestBidderId, saleBanner, botThinking, paused])
 
   useEffect(() => {
-    if (!player || !userPassed || saleBanner || botThinking || !highestBidderId || botDuelCountRef.current >= 4) return undefined
+    if (!player || paused || !userPassed || saleBanner || botThinking || !highestBidderId || botDuelCountRef.current >= 4) return undefined
     const quietKey = `${playerIndex}-${player.name}-${highestBidderId}-${currentBid}`
     if (botQuietKeyRef.current === quietKey) return undefined
     scheduleBotRound(currentBid, highestBidderId, getBotBidIncrement(player, currentBid), teams, 850 + Math.round(Math.random() * 900))
 
     return undefined
-  }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid])
+  }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid, paused])
 
   useEffect(() => {
-    if (!player || userPassed || saleBanner || botThinking || !highestBidderId || highestBidderId === userTeamId) return undefined
+    if (!player || paused || userPassed || saleBanner || botThinking || !highestBidderId || highestBidderId === userTeamId) return undefined
     if (botDuelCountRef.current >= getBotDuelLimit(player)) return undefined
     scheduleBotRound(currentBid, highestBidderId, getBotBidIncrement(player, currentBid), teams, 1050 + Math.round(Math.random() * 1100))
 
     return undefined
-  }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid, userTeamId])
+  }, [playerIndex, player, userPassed, saleBanner, botThinking, highestBidderId, currentBid, userTeamId, paused])
 
   return (
     <section className="auction-page auction-room-page" style={{ '--auction-accent': userTeam.colors.accent, '--auction-secondary': userTeam.colors.secondary }}>
@@ -339,6 +367,9 @@ export default function AuctionRoom({
           <h1>Mega Auction Room</h1>
         </div>
         <div className="auction-room-actions">
+          <button className={paused ? 'auction-pause-button paused' : 'auction-pause-button'} disabled={!player || Boolean(saleBanner)} onClick={togglePaused} type="button">
+            {paused ? 'Resume Auction' : 'Pause Auction'}
+          </button>
           <button onClick={() => setShowUpcomingPlayers((current) => !current)} type="button">
             {showUpcomingPlayers ? 'Hide Upcoming' : 'View Upcoming'}
           </button>
@@ -399,7 +430,7 @@ export default function AuctionRoom({
           <AnimatePresence mode="wait">
             <motion.div animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} initial={{ opacity: 0, y: 12 }} key={player?.name ?? 'done'}>
               {player ? (
-                <PlayerStage countdown={countdown} currentBid={currentBid} highestBidder={highestBidder} onViewPlayer={onViewPlayer} phase={phase} player={player} />
+                <PlayerStage countdown={countdown} currentBid={currentBid} highestBidder={highestBidder} onViewPlayer={onViewPlayer} phase={paused ? 'Paused' : phase} player={player} />
               ) : (
                 <div className="auction-stage-card">
                   <h2>Auction complete</h2>
@@ -413,9 +444,9 @@ export default function AuctionRoom({
             canEndAuction={hasValidPlayingTwelve}
             currentBid={currentBid}
             customBid={customBid}
-            canPass={!auctionClosed && !userPassed}
+            canPass={!biddingFrozen && !userPassed}
             disabled={!userCanBid}
-            helperText={userPassed ? 'You passed. Other franchises are bidding this player out.' : userIsHighestBidder ? 'Waiting for another franchise to beat your bid.' : botThinking ? 'Franchises are thinking, but you can jump in.' : hasValidPlayingTwelve ? 'Your playing 12 is valid. You can complete the auction anytime.' : 'You can bid now.'}
+            helperText={paused ? 'Auction paused. Resume to continue the current lot.' : userPassed ? 'You passed. Other franchises are bidding this player out.' : userIsHighestBidder ? 'Waiting for another franchise to beat your bid.' : botThinking ? 'Franchises are thinking, but you can jump in.' : hasValidPlayingTwelve ? 'Your playing 12 is valid. You can complete the auction anytime.' : 'You can bid now.'}
             onAutoBid={autoBid}
             onBid={bidAsUser}
             onCustomBid={submitCustomBid}

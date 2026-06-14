@@ -5604,6 +5604,19 @@ html {
   margin-left: 0;
 }
 
+.auction-room-actions .auction-pause-button {
+  color: #f8fbff;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), color-mix(in srgb, var(--auction-accent, #f7c948) 16%, rgba(255, 255, 255, 0.08))),
+    rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.auction-room-actions .auction-pause-button.paused {
+  color: #061016;
+  background: linear-gradient(135deg, #28f59f, #d7ffe8);
+}
+
 .auction-room-grid {
   max-width: 1380px;
   display: grid;
@@ -5611,6 +5624,336 @@ html {
   gap: 14px;
   align-items: start;
   margin: 0 auto;
+}
+
+.ipl-stats-page {
+  min-height: 100vh;
+  padding: 112px clamp(18px, 4vw, 64px) 60px;
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(247, 201, 72, 0.14), transparent 30%),
+    radial-gradient(circle at 84% 8%, rgba(34, 211, 238, 0.11), transparent 28%),
+    linear-gradient(180deg, rgba(5, 8, 18, 0.78), rgba(5, 8, 18, 0.96));
+}
+
+.ipl-stats-hero {
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.ipl-stats-hero span,
+.ipl-stat-kpis span,
+.stats-card-heading span {
+  color: #95a3c8;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ipl-stats-hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 76px);
+  line-height: 0.92;
+  color: #fff;
+}
+
+.ipl-stats-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: #c5d0ec;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.ipl-stat-kpis,
+.ipl-stats-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.ipl-stat-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ipl-stat-kpis article,
+.ipl-stat-card {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+    rgba(8, 12, 26, 0.82);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
+}
+
+.ipl-stat-kpis article {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+}
+
+.ipl-stat-kpis strong {
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.ipl-stat-kpis small {
+  color: #c5d0ec;
+  font-weight: 850;
+}
+
+.ipl-stats-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 12px;
+}
+
+.ipl-stat-card {
+  min-width: 0;
+  padding: 18px;
+}
+
+.title-race-card {
+  grid-row: span 2;
+}
+
+.stats-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.stats-card-heading strong {
+  color: #fff;
+  font-size: 18px;
+}
+
+.stats-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.stat-bar-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 1.2fr) 32px;
+  gap: 10px;
+  align-items: center;
+}
+
+.stat-team-label {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  color: #e9efff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.stat-team-label img {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.stat-team-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-bar-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.stat-bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--row-accent, #f7c948), #fff0a0);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--row-accent, #f7c948) 38%, transparent);
+}
+
+.stat-bar-row > strong {
+  color: #fff;
+  text-align: right;
+}
+
+.stats-point-chart {
+  --chart-accent: #f97316;
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: 260px auto auto;
+  column-gap: 12px;
+  row-gap: 8px;
+  padding: 6px 4px 0;
+}
+
+.stats-point-chart.purple {
+  --chart-accent: #8b5cf6;
+}
+
+.chart-y-label,
+.chart-x-label {
+  color: #9aa8ca;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chart-y-label {
+  position: absolute;
+  top: 116px;
+  left: -28px;
+  transform: rotate(-90deg);
+}
+
+.chart-y-axis {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #9aa8ca;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.chart-plot {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.075) 0 1px, transparent 1px 25%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+}
+
+.chart-plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.chart-plot polyline {
+  fill: none;
+  stroke: var(--chart-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--chart-accent) 55%, transparent));
+}
+
+.chart-point {
+  position: absolute;
+  left: var(--point-x);
+  top: var(--point-y);
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--point-accent, var(--chart-accent));
+  box-shadow: 0 0 0 4px rgba(5, 8, 18, 0.72), 0 0 18px color-mix(in srgb, var(--point-accent, var(--chart-accent)) 46%, transparent);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.chart-point:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.chart-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  z-index: 5;
+  width: max-content;
+  max-width: 210px;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #eaf1ff;
+  text-align: left;
+  background: rgba(7, 11, 24, 0.96);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.chart-tooltip strong {
+  color: var(--point-accent, var(--chart-accent));
+  font-size: 12px;
+}
+
+.chart-tooltip b {
+  color: #fff;
+  font-size: 13px;
+}
+
+.chart-tooltip small {
+  color: #b9c6e4;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chart-point:hover .chart-tooltip,
+.chart-point:focus-visible .chart-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.chart-x-axis {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--chart-point-count), minmax(0, 1fr));
+  gap: 0;
+  color: #9aa8ca;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.chart-x-axis span {
+  min-width: 0;
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.chart-x-label {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
 }
 
 .auction-squad-board,
@@ -7422,6 +7765,24 @@ html {
 }
 
 @media (max-width: 900px) {
+  .ipl-stat-kpis,
+  .ipl-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .title-race-card {
+    grid-row: auto;
+  }
+
+  .stat-bar-row {
+    grid-template-columns: minmax(130px, 1fr) minmax(90px, 1fr) 28px;
+  }
+
+  .auction-room-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .fan-hero,
   .quiz-layout {
     grid-template-columns: 1fr;
@@ -7465,6 +7826,24 @@ html {
 }
 
 @media (max-width: 640px) {
+  .ipl-stats-page {
+    padding: 92px 14px 44px;
+  }
+
+  .ipl-stat-kpis article,
+  .ipl-stat-card {
+    padding: 14px;
+  }
+
+  .stat-bar-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .stat-bar-row > strong {
+    text-align: left;
+  }
+
   .network-page {
     padding: 92px 14px 52px;
   }

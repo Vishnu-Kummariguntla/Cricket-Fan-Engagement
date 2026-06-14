@@ -61,6 +61,28 @@ const marqueePlayers = new Set([
   'Ravindra Jadeja',
 ])
 
+const premiumAllrounders = new Set([
+  'Hardik Pandya',
+  'Axar Patel',
+  'Ravindra Jadeja',
+  'Sunil Narine',
+  'Andre Russell',
+  'Abhishek Sharma',
+  'Nitish Kumar Reddy',
+  'Cameron Green',
+  'Sam Curran',
+])
+
+const marketFloorCr = {
+  'Hardik Pandya': 13.5,
+  'Axar Patel': 12.5,
+  'Ravindra Jadeja': 14,
+  'Sunil Narine': 10,
+  'Andre Russell': 10,
+  'Abhishek Sharma': 11,
+  'Nitish Kumar Reddy': 6,
+}
+
 const recentAuctionValueCr = {
   'Mitchell Starc': 24.75,
   'Pat Cummins': 20.5,
@@ -194,8 +216,8 @@ function getRecentMarketValue(name) {
 function getSalaryAnchoredMarketValue(anchorValue, ratingMarketValue, basePrice) {
   if (!anchorValue) return ratingMarketValue
 
-  const qualityAdjustment = Math.max(-0.6, Math.min(1.2, (ratingMarketValue - anchorValue) * 0.12))
-  const softCeiling = anchorValue >= 12 ? anchorValue * 1.12 : anchorValue >= 5 ? anchorValue * 1.16 : anchorValue * 1.25
+  const qualityAdjustment = Math.max(-0.4, Math.min(1.6, (ratingMarketValue - anchorValue) * 0.14))
+  const softCeiling = anchorValue >= 12 ? anchorValue * 1.18 : anchorValue >= 5 ? anchorValue * 1.18 : anchorValue * 1.25
   return Math.max(basePrice, Math.min(softCeiling, anchorValue + qualityAdjustment))
 }
 
@@ -275,9 +297,10 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
         Math.max(1.5, basePrice + starRating * 0.12 + formRating * 0.055 + legacyRating * 0.05 + scarcityBoost),
       )
       const recentMarketValue = getRecentMarketValue(name)
-      const estimatedMarketValue = recentMarketValue
+      const estimatedMarketValueRaw = recentMarketValue
         ? getSalaryAnchoredMarketValue(recentMarketValue, ratingMarketValue, basePrice)
         : ratingMarketValue
+      const estimatedMarketValue = Math.max(estimatedMarketValueRaw, marketFloorCr[name] ?? 0)
       const recentFormRating = getRecentFormRating(name, formRating, salaryAnchor, recentMarketValue)
 
       byName.set(name, {
@@ -290,6 +313,7 @@ export function createAuctionPlayers(iplTeams, featuredAnimations = {}, crickete
         iplTeam: team.shortName,
         basePrice,
         estimatedMarketValue: Number(estimatedMarketValue.toFixed(1)),
+        marketFloor: marketFloorCr[name] ?? 0,
         recentMarketValue,
         salaryAnchor,
         starRating,
@@ -333,6 +357,8 @@ export function evaluateBotInterest(team, player, currentBid, scarcity = 1) {
   const pursePressure = Math.max(0.45, team.purse / initialPurse)
   const valueGap = player.estimatedMarketValue - currentBid
   const roleNeed = roleCount === 0 ? 1.18 : roleCount < 3 ? 1 : 0.82
+  const allrounderScarcity = player.role === 'allrounder' ? (player.overseas ? 1.07 : 1.16) : 1
+  const premiumRoleMultiplier = premiumAllrounders.has(player.name) ? 1.14 : 1
   const overseasPressure = player.overseas && overseasCount >= 6 ? 0.78 : 1
   const youthScore = player.legacyRating < 78 ? priorities.youth ?? 1 : 1
   const roleScore =
@@ -349,7 +375,7 @@ export function evaluateBotInterest(team, player, currentBid, scarcity = 1) {
   const recentFormMultiplier = getRecentFormMultiplier(player)
   const starPower = player.starRating * 0.34 + player.formRating * 0.22 + player.recentFormRating * 0.18 + player.legacyRating * 0.22
 
-  return starPower * roleScore * nationalityScore * valueScore * riskScore * youthScore * roleNeed * overseasPressure * pursePressure * scarcity * recentFormMultiplier
+  return starPower * roleScore * nationalityScore * valueScore * riskScore * youthScore * roleNeed * allrounderScarcity * premiumRoleMultiplier * overseasPressure * pursePressure * scarcity * recentFormMultiplier
 }
 
 function getBotBidCeiling(team, player) {
@@ -359,17 +385,18 @@ function getBotBidCeiling(team, player) {
     player.role === 'keeper'
       ? 1.03
       : player.role === 'allrounder'
-        ? 1.04
+        ? 1.08
         : player.role === 'bowler'
           ? 1.03
           : 1
-  const starPremium = marqueePlayers.has(player.name) || player.recentMarketValue >= 12 ? 1.06 : 1
+  const starPremium = marqueePlayers.has(player.name) || player.recentMarketValue >= 12 ? 1.08 : 1
+  const marketFloorPremium = player.marketFloor ? 1.05 : 1
   const recentFormPremium = getRecentFormMultiplier(player)
-  const ceiling = player.estimatedMarketValue * riskMultiplier * rolePremium * starPremium * recentFormPremium
+  const ceiling = player.estimatedMarketValue * riskMultiplier * rolePremium * starPremium * marketFloorPremium * recentFormPremium
   const slotsLeft = Math.max(1, maxSquadSize - team.squad.length)
   const reserveForMinimumBuys = Math.max(0, slotsLeft - 1) * 0.3
   const spendablePurse = Math.max(0, team.purse - reserveForMinimumBuys)
-  const purseCap = player.estimatedMarketValue >= 18 ? 0.24 : player.estimatedMarketValue >= 10 ? 0.2 : player.estimatedMarketValue >= 5 ? 0.16 : 0.1
+  const purseCap = player.estimatedMarketValue >= 18 ? 0.28 : player.estimatedMarketValue >= 10 ? 0.24 : player.estimatedMarketValue >= 5 ? 0.18 : 0.1
 
   return Math.min(spendablePurse, team.purse * purseCap, Math.max(player.basePrice, Number(ceiling.toFixed(1))))
 }
@@ -394,13 +421,22 @@ export function runBotBids({ teams, userTeamId, player, currentBid, highestBidde
       const interest = evaluateBotInterest(team, player, nextBid)
       const marketGap = Math.max(0, player.estimatedMarketValue - nextBid)
       const premiumDiscount = Math.min(20, Math.max(0, player.estimatedMarketValue - 5))
+      const allrounderDiscount = premiumAllrounders.has(player.name) ? 8 : player.role === 'allrounder' ? 4 : 0
+      const floorPressure = player.marketFloor && nextBid < player.marketFloor ? 10 : 0
       const threshold = increment === 0
-        ? 44 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 10) - premiumDiscount * 0.75
-        : 67 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 14) - premiumDiscount - marketGap * 1.6
+        ? 44 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 10) - premiumDiscount * 0.75 - allrounderDiscount - floorPressure
+        : 67 + (hashName(`${team.id}-${player.name}-${nextBid}`) % 14) - premiumDiscount - marketGap * 1.7 - allrounderDiscount - floorPressure
       const ceiling = getBotBidCeiling(team, player)
 
       return team.id !== nextHighestBidderId && interest > threshold && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
-    }) ?? (nextBid <= player.estimatedMarketValue * 0.82
+    }) ?? (player.marketFloor && nextBid <= player.marketFloor
+      ? interestedTeams.find((team) => {
+        const interest = evaluateBotInterest(team, player, nextBid)
+        const ceiling = getBotBidCeiling(team, player)
+
+        return team.id !== nextHighestBidderId && interest > 18 && nextBid <= ceiling && canTeamBuy(team, player, nextBid)
+      })
+      : undefined) ?? (nextBid <= player.estimatedMarketValue * 0.86
       ? interestedTeams.find((team) => {
         const interest = evaluateBotInterest(team, player, nextBid)
         const ceiling = getBotBidCeiling(team, player)
